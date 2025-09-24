@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: javalovers-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: javalovers
+      MYSQL_USER: javalovers
+      MYSQL_PASSWORD: javalovers123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./Banco de Dados/script-create-tables.sql:/docker-entrypoint-initdb.d/01-create-tables.sql
+      - ./Banco de Dados/script-insert-values.sql:/docker-entrypoint-initdb.d/02-insert-values.sql
+    networks:
+      - javalovers-network
+
+  backend:
+    build: ./backend
+    container_name: javalovers-backend
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/javalovers?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: javalovers
+      SPRING_DATASOURCE_PASSWORD: javalovers123
+    depends_on:
+      - mysql
+    networks:
+      - javalovers-network
+
+  frontend:
+    build: ./frontend
+    container_name: javalovers-frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      REACT_APP_API_URL: http://localhost:8080/api
+    depends_on:
+      - backend
+    networks:
+      - javalovers-network
+
+volumes:
+  mysql_data:
+
+networks:
+  javalovers-network:
+    driver: bridge
