@@ -55,7 +55,7 @@ public class ProfileController {
         Profile profile = profileService.generateProfile(profileFormDTO);
         profileService.save(profile);
 
-        URI uri = HttpUtils.createURI(uriComponentsBuilder, "selection-process-type", profile.getProfileId());
+        URI uri = HttpUtils.createURI(uriComponentsBuilder, "profile", profile.getProfileId());
 
         return ResponseEntity.created(uri).body(profileService.generateProfileDTO(profile));
     }
