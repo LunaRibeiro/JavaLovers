@@ -8,9 +8,9 @@ spring:
     name: javalovers-backend
 
   datasource:
-    url: jdbc:mariadb://localhost:3306/JavaLovers
-    username: root
-    password: root
+    url: jdbc:mariadb://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:javalovers}
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:root}
     driver-class-name: org.mariadb.jdbc.Driver
 
   jpa:
