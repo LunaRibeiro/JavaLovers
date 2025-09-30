@@ -1,12 +1,12 @@
 package com.javalovers.core.user.service;
 
-import com.javalovers.core.profile.domain.dto.request.ProfileFormDTO;
-import com.javalovers.core.profile.domain.dto.response.ProfileDTO;
-import com.javalovers.core.profile.domain.entity.Profile;
-import com.javalovers.core.profile.mapper.ProfileCreateMapper;
-import com.javalovers.core.profile.mapper.ProfileDTOMapper;
-import com.javalovers.core.profile.mapper.ProfileUpdateMapper;
-import com.javalovers.core.profile.repository.ProfileRepository;
+import com.javalovers.core.user.domain.dto.request.UserFormDTO;
+import com.javalovers.core.user.domain.dto.response.UserDTO;
+import com.javalovers.core.user.domain.entity.User;
+import com.javalovers.core.user.mapper.UserCreateMapper;
+import com.javalovers.core.user.mapper.UserDTOMapper;
+import com.javalovers.core.user.mapper.UserUpdateMapper;
+import com.javalovers.core.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,49 +18,49 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserService {
 
-    private final ProfileRepository profileRepository;
-    private final ProfileCreateMapper profileCreateMapper;
-    private final ProfileDTOMapper profileDTOMapper;
-    private final ProfileUpdateMapper profileUpdateMapper;
+    private final UserRepository userRepository;
+    private final UserCreateMapper userCreateMapper;
+    private final UserDTOMapper userDTOMapper;
+    private final UserUpdateMapper userUpdateMapper;
 
-    public Profile generateProfile(ProfileFormDTO profileFormDTO) {
-        return profileCreateMapper.convert(profileFormDTO);
+    public User generateUser(UserFormDTO userFormDTO) {
+        return userCreateMapper.convert(userFormDTO);
     }
 
-    public void save (Profile profile) {
-        profileRepository.save(profile);
+    public void save (User user) {
+        userRepository.save(user);
     }
 
-    public ProfileDTO generateProfileDTO(Profile profile) {
-        return profileDTOMapper.convert(profile);
+    public UserDTO generateUserDTO(User user) {
+        return userDTOMapper.convert(user);
     }
 
-    public Profile getOrNull(Long id){
-        return profileRepository.findById(id).orElse(null);
+    public User getOrNull(Long id){
+        return userRepository.findById(id).orElse(null);
     }
 
-    public void updateProfile(Profile profile, ProfileFormDTO profileFormDTO) {
-        profileUpdateMapper.update(profile, profileFormDTO);
+    public void updateUser(User user, UserFormDTO userFormDTO) {
+        userUpdateMapper.update(user, userFormDTO);
     }
 
-    public void delete(Profile profile) {
-        profileRepository.delete(profile);
+    public void delete(User user) {
+        userRepository.delete(user);
     }
 
-    public List<Profile> list() {
-        return profileRepository.findAll();
+    public List<User> list() {
+        return userRepository.findAll();
     }
 
-    public Page<Profile> list(Pageable pageable) {
-        return profileRepository.findAll(pageable);
+    public Page<User> list(Pageable pageable) {
+        return userRepository.findAll(pageable);
     }
 
-    public Page<ProfileDTO> generateProfileDTOPage(Page<Profile> profilePage) {
-        return profilePage.map(this::generateProfileDTO);
+    public Page<UserDTO> generateUserDTOPage(Page<User> userPage) {
+        return userPage.map(this::generateUserDTO);
     }
 
-    public List<ProfileDTO> generateProfileDTOList(List<Profile> profileList) {
-        return profileList.stream().map(profileDTOMapper::convert).toList();
+    public List<UserDTO> generateUserDTOList(List<User> userList) {
+        return userList.stream().map(userDTOMapper::convert).toList();
     }
+
 }
-
