@@ -27,6 +27,7 @@ public class Card {
     @NotNull
     private Date issueDate;
 
+    @NotNull
     private Long beneficiaryId;
 
 }
