@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   mysql:
@@ -14,8 +14,8 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./Banco de Dados/script-create-tables.sql:/docker-entrypoint-initdb.d/01-create-tables.sql
-      - ./Banco de Dados/script-insert-values.sql:/docker-entrypoint-initdb.d/02-insert-values.sql
+      - ./db/script-create-tables.sql:/docker-entrypoint-initdb.d/01-create-tables.sql
+      - ./db/script-insert-values.sql:/docker-entrypoint-initdb.d/02-insert-values.sql
     networks:
       - javalovers-network
 
