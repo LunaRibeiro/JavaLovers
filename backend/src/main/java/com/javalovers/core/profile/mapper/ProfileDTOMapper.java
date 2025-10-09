@@ -10,6 +10,7 @@ public class ProfileDTOMapper {
     public ProfileDTO convert(Profile profile) {
         if(profile == null) return null;
         return new ProfileDTO(
+                profile.getProfileId(),
                 profile.getDescription(),
                 profile.getName()
         );

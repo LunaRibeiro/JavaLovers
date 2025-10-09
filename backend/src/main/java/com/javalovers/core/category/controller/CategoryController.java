@@ -74,10 +74,10 @@ public class CategoryController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        Category profile = categoryService.getOrNull(id);
-        if(profile == null) return ResponseEntity.notFound().build();
+        Category category = categoryService.getOrNull(id);
+        if(category == null) return ResponseEntity.notFound().build();
 
-        categoryService.delete(profile);
+        categoryService.delete(category);
 
         return ResponseEntity.noContent().build();
     }
