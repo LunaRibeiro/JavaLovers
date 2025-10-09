@@ -6,6 +6,7 @@ import java.util.Date;
 
 public record BeneficiaryFormDTO(
         String fullName,
+        String cpf,
         String phone,
         String socioeconomicData,
         Date registrationDate,
