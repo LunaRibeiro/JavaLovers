@@ -19,7 +19,7 @@ public class Card {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long cardId;
 
     @NotNull
     @Column(unique = true, nullable = false)
