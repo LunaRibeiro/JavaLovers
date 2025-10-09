@@ -1,4 +1,4 @@
-package com.javalovers.core.card;
+package com.javalovers.core.card.service;
 
 import com.javalovers.common.specification.SearchCriteria;
 import com.javalovers.common.specification.SpecificationHelper;
