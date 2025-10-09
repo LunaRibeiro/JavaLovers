@@ -10,6 +10,7 @@ public class CategoryDTOMapper {
     public CategoryDTO convert(Category category) {
         if(category == null) return null;
         return new CategoryDTO(
+                category.getCategoryId(),
                 category.getName()
         );
     }
