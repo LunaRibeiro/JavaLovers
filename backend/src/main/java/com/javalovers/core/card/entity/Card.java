@@ -1,4 +1,4 @@
-package com.javalovers.core.card.dto.entity;
+package com.javalovers.core.card.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.Date;
+
 
 @Entity
 @AllArgsConstructor
