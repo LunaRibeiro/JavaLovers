@@ -30,5 +30,5 @@ public class Item {
     private String tagCode;
 
     @ManyToOne(cascade = CascadeType.ALL)
-    private Category category;
+    private Category categoryId;
 }
