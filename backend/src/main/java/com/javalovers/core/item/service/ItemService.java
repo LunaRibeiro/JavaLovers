@@ -2,16 +2,16 @@ package com.javalovers.core.item.service;
 
 import com.javalovers.common.specification.SearchCriteria;
 import com.javalovers.common.specification.SpecificationHelper;
+import com.javalovers.core.category.domain.entity.Category;
+import com.javalovers.core.item.domain.dto.request.ItemFilterDTO;
+import com.javalovers.core.item.domain.dto.request.ItemFormDTO;
+import com.javalovers.core.item.domain.dto.response.ItemDTO;
+import com.javalovers.core.item.domain.entity.Item;
+import com.javalovers.core.item.mapper.ItemCreateMapper;
+import com.javalovers.core.item.mapper.ItemDTOMapper;
+import com.javalovers.core.item.mapper.ItemUpdateMapper;
 import com.javalovers.core.item.repository.ItemRepository;
-import com.javalovers.core.profile.domain.dto.request.ProfileFilterDTO;
-import com.javalovers.core.profile.domain.dto.request.ProfileFormDTO;
-import com.javalovers.core.profile.domain.dto.response.ProfileDTO;
-import com.javalovers.core.profile.domain.entity.Profile;
-import com.javalovers.core.profile.mapper.ProfileCreateMapper;
-import com.javalovers.core.profile.mapper.ProfileDTOMapper;
-import com.javalovers.core.profile.mapper.ProfileUpdateMapper;
-import com.javalovers.core.profile.repository.ProfileRepository;
-import com.javalovers.core.profile.specification.ProfileSpecification;
+import com.javalovers.core.item.specification.ItemSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,62 +24,66 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ItemService {
 
-    private final ItemRepository profileRepository;
-    private final ItemCreateMa profileCreateMapper;
-    private final ProfileDTOMapper profileDTOMapper;
-    private final ProfileUpdateMapper profileUpdateMapper;
+    private final ItemRepository itemRepository;
+    private final ItemCreateMapper itemCreateMapper;
+    private final ItemDTOMapper itemDTOMapper;
+    private final ItemUpdateMapper itemUpdateMapper;
+    private Category category;
 
-    public Profile generateProfile(ProfileFormDTO profileFormDTO) {
-        return profileCreateMapper.convert(profileFormDTO);
+    public Item generateItem(ItemFormDTO itemFormDTO) {
+        return itemCreateMapper.convert(itemFormDTO, category);
     }
 
-    public void save (Profile profile) {
-        profileRepository.save(profile);
+    public void save (Item item) {
+        itemRepository.save(item);
     }
 
-    public ProfileDTO generateProfileDTO(Profile profile) {
-        return profileDTOMapper.convert(profile);
+    public ItemDTO generateItemDTO(Item item) {
+        return itemDTOMapper.convert(item);
     }
 
-    public Profile getOrNull(Long id){
-        return profileRepository.findById(id).orElse(null);
+    public Item getOrNull(Long id){
+        return itemRepository.findById(id).orElse(null);
     }
 
-    public void updateProfile(Profile profile, ProfileFormDTO profileFormDTO) {
-        profileUpdateMapper.update(profile, profileFormDTO);
+    public void updateItem(Item item, ItemFormDTO itemFormDTO) {
+        itemUpdateMapper.update(item, itemFormDTO);
     }
 
-    public void delete(Profile profile) {
-        profileRepository.delete(profile);
+    public void delete(Item item) {
+        itemRepository.delete(item);
     }
 
-    public List<Profile> list(ProfileFilterDTO profileFilterDTO) {
-        Specification<Profile> profileSpecification = generateSpecification(profileFilterDTO);
-        return profileRepository.findAll(profileSpecification);
+    public List<Item> list(ItemFilterDTO itemFilterDTO) {
+        Specification<Item> itemSpecification = generateSpecification(itemFilterDTO);
+        return itemRepository.findAll(itemSpecification);
     }
 
-    public Page<Profile> list(Pageable pageable, ProfileFilterDTO profileFilterDTO) {
-        Specification<Profile> profileSpecification = generateSpecification(profileFilterDTO);
-        return profileRepository.findAll(profileSpecification, pageable);
+    public Page<Item> list(Pageable pageable, ItemFilterDTO itemFilterDTO) {
+        Specification<Item> itemSpecification = generateSpecification(itemFilterDTO);
+        return itemRepository.findAll(itemSpecification, pageable);
     }
 
-    private Specification<Profile> generateSpecification(ProfileFilterDTO profileFilterDTO) {
-        SearchCriteria<String> descriptionCriteria = SpecificationHelper.generateInnerLikeCriteria("description", profileFilterDTO.description());
-        SearchCriteria<String> nameCriteria = SpecificationHelper.generateInnerLikeCriteria("name", profileFilterDTO.name());
+    private Specification<Item> generateSpecification(ItemFilterDTO itemFilterDTO) {
+        SearchCriteria<String> descriptionCriteria = SpecificationHelper.generateInnerLikeCriteria("description", itemFilterDTO.description());
+        SearchCriteria<Long> stockQuantityCriteria = SpecificationHelper.generateEqualsCriteria("stockQuantity", itemFilterDTO.stockQuantity());
+        SearchCriteria<String> tagCodeCriteria = SpecificationHelper.generateInnerLikeCriteria("tagCode", itemFilterDTO.tagCode());
 
-        Specification<Profile> descriptionSpecification = new ProfileSpecification(descriptionCriteria);
-        Specification<Profile> nameSpecification = new ProfileSpecification(nameCriteria);
+        Specification<Item> descriptionSpecification = new ItemSpecification(descriptionCriteria);
+        Specification<Item> stockQuantitySpecification = new ItemSpecification(stockQuantityCriteria);
+        Specification<Item> tagCodeSpecification = new ItemSpecification(tagCodeCriteria);
 
         return Specification.where(descriptionSpecification)
-                .and(nameSpecification);
+                .and(stockQuantitySpecification)
+                .and(tagCodeSpecification);
     }
 
-    public Page<ProfileDTO> generateProfileDTOPage(Page<Profile> profilePage) {
-        return profilePage.map(this::generateProfileDTO);
+    public Page<ItemDTO> generateItemDTOPage(Page<Item> itemPage) {
+        return itemPage.map(this::generateItemDTO);
     }
 
-    public List<ProfileDTO> generateProfileDTOList(List<Profile> profileList) {
-        return profileList.stream().map(profileDTOMapper::convert).toList();
+    public List<ItemDTO> generateItemDTOList(List<Item> itemList) {
+        return itemList.stream().map(itemDTOMapper::convert).toList();
     }
 
 }
