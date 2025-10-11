@@ -1,4 +1,4 @@
-package com.javalovers.core.item.domain.repository;
+package com.javalovers.core.item.repository;
 
 import com.javalovers.core.item.domain.entity.Item;
 import org.springframework.data.jpa.repository.JpaRepository;

@@ -1,4 +1,4 @@
-package com.javalovers.core.item.domain.specification;
+package com.javalovers.core.item.specification;
 
 import com.javalovers.common.specification.BaseSpecification;
 import com.javalovers.common.specification.SearchCriteria;
