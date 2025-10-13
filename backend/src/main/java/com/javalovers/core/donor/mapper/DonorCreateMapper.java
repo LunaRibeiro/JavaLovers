@@ -1,10 +1,7 @@
 package com.javalovers.core.donor.mapper;
 
-import com.javalovers.core.category.domain.entity.Category;
 import com.javalovers.core.donor.domain.dto.request.DonorFormDTO;
 import com.javalovers.core.donor.domain.entity.Donor;
-import com.javalovers.core.item.domain.dto.request.ItemFormDTO;
-import com.javalovers.core.item.domain.entity.Item;
 import org.springframework.stereotype.Service;
 
 @Service
