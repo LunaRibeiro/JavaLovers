@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
+@Table(name = "donor")
 @Getter
 @Setter
 @AllArgsConstructor
@@ -16,13 +17,17 @@ public class Donor {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "donor_id")
     private Long donorId;
 
     @NotNull
+    @Column(name = "name")
     private String name;
 
-    @Column(unique = true)
+    @Column(name = "cpf_cnpj", unique = true)
     private String cpfCnpj;
+
+    @Column(name = "contact")
     private String contact;
 
 }

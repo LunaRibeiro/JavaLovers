@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
+@Table(name = "item")
 @Getter
 @Setter
 @AllArgsConstructor
@@ -18,17 +19,21 @@ public class Item {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "item_id")
     private Long itemId;
 
     @NotBlank
+    @Column(name = "description")
     private String description;
 
     @NotNull
+    @Column(name = "stock_quantity")
     private Long stockQuantity;
 
-    @Column(unique = true)
+    @Column(name = "tag_code", unique = true)
     private String tagCode;
 
     @ManyToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "category_id")
     private Category categoryId;
 }

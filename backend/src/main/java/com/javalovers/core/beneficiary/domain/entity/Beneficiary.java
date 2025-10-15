@@ -12,6 +12,7 @@ import lombok.Setter;
 import java.util.Date;
 
 @Entity
+@Table(name = "beneficiary")
 @Getter
 @Setter
 @AllArgsConstructor
@@ -20,21 +21,34 @@ public class Beneficiary {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "beneficiary_id")
     private Long beneficiaryId;
 
     @NotBlank
+    @Column(name = "full_name")
     private String fullName;
 
     @NotBlank
-    @Column(unique = true)
+    @Column(name = "cpf", unique = true)
     private String cpf;
+
+    @Column(name = "address")
+    private String address;
+
+    @Column(name = "phone")
     private String phone;
+
+    @Column(name = "socioeconomic_data")
     private String socioeconomicData;
+
+    @Column(name = "registration_date")
     private Date registrationDate;
+
+    @Column(name = "beneficiary_status")
     private BeneficiaryStatus beneficiaryStatus;
 
     @ManyToOne
-    @JoinColumn(name = "approver_user_id", nullable = false)
+    @JoinColumn(name = "approver_user_id")
     private User approverId;
 
 }
