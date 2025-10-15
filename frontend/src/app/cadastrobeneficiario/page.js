@@ -4,6 +4,9 @@ import MenuBar from "../components/menubar/menubar";
 import Navegation from "../components/navegation/navegation";
 import { useRouter } from "next/navigation";
 import styles from "./cadastrobeneficiario.module.css";
+import apiService from "../../services/api";
+import { mapBeneficiaryToBackend } from "../../services/dataMapper";
+import { useApi } from "../../hooks/useApi";
 
 const CadastroBeneficiario = () => {
   const [form, setForm] = useState({
@@ -18,9 +21,8 @@ const CadastroBeneficiario = () => {
     complemento: "",
     pontoReferencia: ""
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const router = useRouter();
+  const { loading, error, execute, clearError } = useApi();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -28,8 +30,7 @@ const CadastroBeneficiario = () => {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setLoading(true);
-    setError("");
+    clearError();
     
     // Validação: pelo menos um dos campos (CPF/CRNM ou NIF) deve ser preenchido
     const cpfCrnmLimpo = form.cpfCrnm.replace(/\D/g, "");
@@ -37,41 +38,33 @@ const CadastroBeneficiario = () => {
     
     if (cpfCrnmLimpo.length === 0 && nifLimpo.length === 0) {
       setError("É obrigatório preencher pelo menos um dos campos: CPF/CRNM ou NIF.");
-      setLoading(false);
       return;
     }
     
     // Se CPF/CRNM foi preenchido, validar formato (11 dígitos para CPF)
     if (cpfCrnmLimpo.length > 0 && cpfCrnmLimpo.length !== 11) {
       setError("CPF/CRNM deve conter 11 dígitos numéricos.");
-      setLoading(false);
       return;
     }
 
     // Validação de email (regex simples)
     if (!/\S+@\S+\.\S+/.test(form.email)) {
       setError("Por favor, insira um e-mail válido.");
-      setLoading(false);
       return;
     }
 
     try {
-      const novoBeneficiario = {
-        id: Date.now(),
-        nomeCompleto: form.nomeCompleto,
-        telefoneCelular: form.telefoneCelular,
-        email: form.email,
+      // Prepara dados para o backend
+      const beneficiaryData = mapBeneficiaryToBackend({
+        ...form,
         cpfCrnm: cpfCrnmLimpo,
-        nif: nifLimpo,
-        endereco: form.endereco,
-        bairro: form.bairro,
-        numero: form.numero,
-        complemento: form.complemento,
-        pontoReferencia: form.pontoReferencia
-      };
-      const beneficiarios = JSON.parse(localStorage.getItem('mockBeneficiarios') || '[]');
-      beneficiarios.push(novoBeneficiario);
-      localStorage.setItem('mockBeneficiarios', JSON.stringify(beneficiarios));
+        nif: nifLimpo
+      });
+
+      // Chama a API
+      await execute(() => apiService.createBeneficiary(beneficiaryData));
+      
+      // Limpa o formulário
       setForm({
         nomeCompleto: "",
         telefoneCelular: "",
@@ -84,12 +77,11 @@ const CadastroBeneficiario = () => {
         complemento: "",
         pontoReferencia: ""
       });
+      
       alert("Beneficiário cadastrado com sucesso!");
       router.push("/sucesso?tipo=beneficiarios");
     } catch (err) {
-      setError("Erro ao cadastrar beneficiário");
-    } finally {
-      setLoading(false);
+      console.error("Erro ao cadastrar beneficiário:", err);
     }
   }
 
