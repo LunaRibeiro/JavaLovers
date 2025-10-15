@@ -5,9 +5,9 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: javalovers
-      MYSQL_USER: javalovers
-      MYSQL_PASSWORD: javalovers123
+      MYSQL_DATABASE: sanem
+      MYSQL_USER: sanem
+      MYSQL_PASSWORD: sanem123
     ports:
       - "3307:3306"
     volumes:
@@ -24,9 +24,9 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/javalovers?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: javalovers
-      SPRING_DATASOURCE_PASSWORD: javalovers123
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/sanem?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: sanem
+      SPRING_DATASOURCE_PASSWORD: sanem123
     depends_on:
       - mysql
     networks:
