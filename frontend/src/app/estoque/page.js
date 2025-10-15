@@ -1,13 +1,14 @@
 "use client";
 import MenuBar from '../components/menubar/menubar';
 import Navigation from '../components/navegation/navegation';
-import { mockEstoque as mockEstoqueOrig } from '../../mocks/mockEstoque';
 import styles from './estoque.module.css';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import apiService from '../../services/api';
+import { mapItemFromBackend, mapItemToBackend } from '../../services/dataMapper';
+import { useApiList } from '../../hooks/useApi';
 
 export default function EstoquePage() {
-  const [mockEstoque, setMockEstoque] = useState(mockEstoqueOrig);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
@@ -17,22 +18,51 @@ export default function EstoquePage() {
   const router = useRouter();
   const hasNotification = false;
 
-  function handleAddProduto(e) {
+  const {
+    data: mockEstoque,
+    loading,
+    error,
+    loadData,
+    addItem,
+    updateItem,
+    removeItem
+  } = useApiList(apiService.getItems);
+
+  useEffect(() => {
+    loadData().catch(err => {
+      console.error("Erro ao carregar itens:", err);
+    });
+  }, [loadData]);
+
+  async function handleAddProduto(e) {
     e.preventDefault();
-    const novo = {
-      id: mockEstoque.length ? Math.max(...mockEstoque.map(i => i.id)) + 1 : 1,
-      ...novoProduto,
-      quantidade: Number(novoProduto.quantidade)
-    };
-    setMockEstoque([...mockEstoque, novo]);
-    setNovoProduto({ nome: '', categoria: '', tamanho: '', quantidade: '' });
-    setShowAddModal(false);
+    try {
+      const itemData = mapItemToBackend({
+        ...novoProduto,
+        quantidade: Number(novoProduto.quantidade)
+      });
+      
+      const newItem = await apiService.createItem(itemData);
+      addItem(mapItemFromBackend(newItem));
+      
+      setNovoProduto({ nome: '', categoria: '', tamanho: '', quantidade: '' });
+      setShowAddModal(false);
+    } catch (err) {
+      console.error("Erro ao adicionar produto:", err);
+      alert("Erro ao adicionar produto. Tente novamente.");
+    }
   }
 
-  function handleDeleteProduto() {
-    setMockEstoque(mockEstoque.filter(item => item.id !== itemToDelete.id));
-    setShowDeleteModal(false);
-    setItemToDelete(null);
+  async function handleDeleteProduto() {
+    try {
+      await apiService.deleteItem(itemToDelete.id);
+      removeItem(itemToDelete.id);
+      setShowDeleteModal(false);
+      setItemToDelete(null);
+    } catch (err) {
+      console.error("Erro ao excluir produto:", err);
+      alert("Erro ao excluir produto. Tente novamente.");
+    }
   }
 
   function openDeleteModal(item) {
@@ -55,12 +85,22 @@ export default function EstoquePage() {
     setEditProduto(prev => ({ ...prev, [name]: name === 'quantidade' ? Number(value) : value }));
   }
 
-  function saveEditProduto(id) {
-    setMockEstoque(mockEstoque.map(item =>
-      item.id === id ? { ...item, ...editProduto } : item
-    ));
-    setEditId(null);
-    setEditProduto({ nome: '', categoria: '', tamanho: '', quantidade: '' });
+  async function saveEditProduto(id) {
+    try {
+      const itemData = mapItemToBackend({
+        ...editProduto,
+        quantidade: Number(editProduto.quantidade)
+      });
+      
+      await apiService.updateItem(id, itemData);
+      updateItem(id, editProduto);
+      
+      setEditId(null);
+      setEditProduto({ nome: '', categoria: '', tamanho: '', quantidade: '' });
+    } catch (err) {
+      console.error("Erro ao editar produto:", err);
+      alert("Erro ao editar produto. Tente novamente.");
+    }
   }
 
   function cancelEditProduto() {
