@@ -4,6 +4,9 @@ import MenuBar from "../components/menubar/menubar";
 import Navegation from "../components/navegation/navegation";
 import { useRouter } from "next/navigation";
 import styles from "./cadastrodoador.module.css";
+import apiService from "../../services/api";
+import { mapDonorToBackend } from "../../services/dataMapper";
+import { useApi } from "../../hooks/useApi";
 
 const CadastroDoador = () => {
   const [form, setForm] = useState({
@@ -17,9 +20,8 @@ const CadastroDoador = () => {
     complemento: "",
     pontoReferencia: ""
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const router = useRouter();
+  const { loading, error, execute, clearError } = useApi();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -27,36 +29,27 @@ const CadastroDoador = () => {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setLoading(true);
-    setError("");
+    clearError();
     
     // Limpa o CPF para garantir que só vai número
     const cpfLimpo = form.cpf.replace(/\D/g, "");
     
     if (cpfLimpo.length > 0 && cpfLimpo.length !== 11) {
       setError("CPF deve conter 11 dígitos numéricos.");
-      setLoading(false);
       return;
     }
     
     try {
-      // Simula cadastro local (mock)
-      const novoDoador = {
-        id: Date.now(),
-        nomeCompleto: form.nomeCompleto,
-        telefoneCelular: form.telefoneCelular,
-        email: form.email,
-        cpf: cpfLimpo,
-        endereco: form.endereco,
-        bairro: form.bairro,
-        numero: form.numero,
-        complemento: form.complemento,
-        pontoReferencia: form.pontoReferencia
-      };
-      // Salva no localStorage
-      const doadores = JSON.parse(localStorage.getItem('mockDoadores') || '[]');
-      doadores.push(novoDoador);
-      localStorage.setItem('mockDoadores', JSON.stringify(doadores));
+      // Prepara dados para o backend
+      const donorData = mapDonorToBackend({
+        ...form,
+        cpf: cpfLimpo
+      });
+
+      // Chama a API
+      await execute(() => apiService.createDonor(donorData));
+      
+      // Limpa o formulário
       setForm({
         nomeCompleto: "",
         telefoneCelular: "",
@@ -68,12 +61,11 @@ const CadastroDoador = () => {
         complemento: "",
         pontoReferencia: ""
       });
+      
       alert("Doador cadastrado com sucesso!");
       router.push("/sucesso?tipo=doadores");
     } catch (err) {
-      setError(err.message || "Erro ao cadastrar");
-    } finally {
-      setLoading(false);
+      console.error("Erro ao cadastrar doador:", err);
     }
   }
 

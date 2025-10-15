@@ -5,47 +5,46 @@ import Navigation from "../../components/navegation/navegation";
 import styles from "./lista.module.css";
 import { useRouter } from "next/navigation";
 import modalStyles from "./lista.module.css";
+import apiService from "../../../services/api";
+import { mapDonorFromBackend } from "../../../services/dataMapper";
+import { useApiList } from "../../../hooks/useApi";
 
 export default function ListaDoadores() {
-  const [doadores, setDoadores] = useState([]); // [{id, nomeCompleto, email, telefoneCelular, ...}]
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const router = useRouter();
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editForm, setEditForm] = useState(null); // objeto do doador a editar
   const [editError, setEditError] = useState("");
   const [editLoading, setEditLoading] = useState(false);
+  
+  const {
+    data: doadores,
+    loading,
+    error,
+    loadData,
+    removeItem,
+    clearError
+  } = useApiList(apiService.getDonors);
 
   useEffect(() => {
-    setLoading(true);
-    setError("");
-    try {
-      const mock = JSON.parse(localStorage.getItem('mockDoadores') || '[]');
-      setDoadores(mock);
-    } catch (err) {
-      setError("Erro ao carregar doadores do mock");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    loadData().catch(err => {
+      console.error("Erro ao carregar doadores:", err);
+    });
+  }, [loadData]);
 
   const handleEdit = (id) => {
     router.push(`/cadastrodoador/editar/${id}`);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (!window.confirm("Tem certeza que deseja excluir este doador?")) return;
-    setLoading(true);
-    setError("");
+    
     try {
-      const novos = doadores.filter((d) => d.id !== id);
-      setDoadores(novos);
-      localStorage.setItem('mockDoadores', JSON.stringify(novos));
+      await apiService.deleteDonor(id);
+      removeItem(id);
       alert("Doador excluído com sucesso!");
     } catch (err) {
-      setError("Erro ao excluir doador");
-    } finally {
-      setLoading(false);
+      console.error("Erro ao excluir doador:", err);
+      alert("Erro ao excluir doador. Tente novamente.");
     }
   };
 
