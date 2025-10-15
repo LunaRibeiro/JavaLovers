@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
+@Table(name = "app_user")
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
@@ -18,27 +19,31 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "user_id")
     private Long userId;
 
     @NotBlank
+    @Column(name = "name")
     private String name;
 
     @NotBlank
-    @Column(nullable = false, unique = true)
+    @Column(name = "login", nullable = false, unique = true)
     private String login;
 
     @NotBlank
-    @Column(nullable = false, unique = true)
+    @Column(name = "email", nullable = false, unique = true)
     private String email;
 
     @NotBlank
+    @Column(name = "password_hash")
     private String passwordHash;
 
     @NotBlank
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = Status.StatusConverter.class)
+    @Column(name = "status")
     private Status status;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "profile_id", nullable = false)
     private Profile profile;
 }
