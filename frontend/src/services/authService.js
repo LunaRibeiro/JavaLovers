@@ -1,10 +1,12 @@
 // Serviço de autenticação
 import apiService from './api';
+import { API_CONFIG } from '../config/api';
 
 class AuthService {
   constructor() {
     this.tokenKey = 'auth_token';
     this.userKey = 'user_data';
+    this.baseURL = API_CONFIG.BASE_URL;
   }
 
   // Verifica se o usuário está autenticado
@@ -48,29 +50,42 @@ class AuthService {
   // Login com usuário e senha
   async login(username, password) {
     try {
-      // Por enquanto, vamos usar uma validação simples
-      // Em produção, isso deveria chamar um endpoint de login real
-      if (username && password) {
-        // Simula uma autenticação básica
-        const mockUser = {
-          id: 1,
-          name: username,
-          email: `${username}@example.com`,
-          role: 'admin'
-        };
-        
-        const mockToken = 'mock_token_' + Date.now();
-        
-        this.setAuthData(mockToken, mockUser);
-        
-        return {
-          success: true,
-          user: mockUser,
-          token: mockToken
-        };
-      } else {
+      if (!username || !password) {
         throw new Error('Usuário e senha são obrigatórios');
       }
+
+      const response = await fetch(`${this.baseURL}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          login: username,
+          password: password
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Usuário ou senha incorretos');
+      }
+
+      const data = await response.json();
+
+      const user = {
+        id: data.userId,
+        name: data.name,
+        email: data.email,
+        role: data.role
+      };
+
+      this.setAuthData(data.token, user);
+
+      return {
+        success: true,
+        user: user,
+        token: data.token
+      };
     } catch (error) {
       console.error('Erro no login:', error);
       throw error;
@@ -85,15 +100,27 @@ class AuthService {
     }
   }
 
-  // Verifica se o token é válido (simulação)
+  // Verifica se o token é válido
   async validateToken() {
     const token = this.getToken();
     if (!token) {
       return false;
     }
-    
-    // Em produção, isso deveria validar o token com o backend
-    return true;
+
+    try {
+      const response = await fetch(`${this.baseURL}/auth/validate`, {
+        method: 'POST',
+        headers: {
+          'Authorization': token,
+          'Content-Type': 'application/json',
+        }
+      });
+
+      return response.ok;
+    } catch (error) {
+      console.error('Erro na validação do token:', error);
+      return false;
+    }
   }
 
   // Obtém o header de autorização para requisições
