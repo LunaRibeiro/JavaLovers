@@ -1,184 +1,92 @@
-USE doacoes;
+USE sanem;
 
 -- ========================
--- PERFIL
+-- PROFILE
 -- ========================
-INSERT INTO Perfil (Nome, Descricao) VALUES
-                                         ('Administrador', 'Acesso total ao sistema'),
-                                         ('Atendente', 'Realiza cadastros e retiradas'),
-                                         ('Avaliador', 'Aprova ou reprova beneficiários');
+INSERT INTO profile (name, description) VALUES
+                                         ('Administrator', 'Full system access'),
+                                         ('Attendant', 'Performs registrations and withdrawals'),
+                                         ('Evaluator', 'Approves or rejects beneficiaries');
 
 -- ========================
--- USUÁRIO
--- (senha simulada com hash fictício)
+-- USER
+-- (real BCrypt hash for password "1234")
 -- ========================
-INSERT INTO Usuario (Nome, Login, Email, SenhaHash, Status, ID_Perfil) VALUES
-                                                                           ('Ana Souza', 'ana', 'ana@email.com', '$2a$10$hash1', 'Ativo', 1),
-                                                                           ('Bruno Lima', 'bruno', 'bruno@email.com', '$2a$10$hash2', 'Ativo', 2),
-                                                                           ('Carlos Mendes', 'carlos', 'carlos@email.com', '$2a$10$hash3', 'Ativo', 3);
+INSERT INTO app_user (name, login, email, password_hash, status, profile_id) VALUES
+                                                                           ('Vitor Paladini', 'paladini-adm', 'paladini-adm@gmail.com', '$2a$10$54XF3HlwMqdn0XuyO7uHauB8CeonOjr4i.icnP4YUrgabp9eh.Y.a', 'ACTIVE', 1),
+                                                                           ('Vitor Paladini', 'paladini-atd', 'paladini-atd@gmail.com', '$2a$10$54XF3HlwMqdn0XuyO7uHauB8CeonOjr4i.icnP4YUrgabp9eh.Y.a', 'ACTIVE', 2),
+                                                                           ('Vitor Paladini', 'paladini-eval', 'paladini-eval@gmail.com', '$2a$10$54XF3HlwMqdn0XuyO7uHauB8CeonOjr4i.icnP4YUrgabp9eh.Y.a', 'ACTIVE', 3);
 
 -- ========================
--- BENEFICIÁRIO
+-- BENEFICIARY
 -- ========================
-INSERT INTO Beneficiario (NomeCompleto, CPF, Endereco, Contato, DadosSocioeconomicos, Status, ID_UsuarioAprovador)
+INSERT INTO beneficiary (full_name, cpf, address, phone, socioeconomic_data, beneficiary_status, approver_user_id)
 VALUES
-    ('Maria Oliveira', '111.111.111-11', 'Rua A, 123', '11-99999-1111', 'Baixa renda', 'Aprovado', 3),
-    ('José Santos', '222.222.222-22', 'Rua B, 456', '11-99999-2222', 'Situação de vulnerabilidade', 'Pendente', NULL),
-    ('Clara Silva', '333.333.333-33', 'Rua C, 789', '11-99999-3333', 'Desempregada', 'Reprovado', 3);
+    ('Maria Oliveira', '111.111.111-11', 'Street A, 123', '11-99999-1111', 'Low income', 'APPROVED', 3),
+    ('José Santos', '222.222.222-22', 'Street B, 456', '11-99999-2222', 'Vulnerable situation', 'PENDING', NULL),
+    ('Clara Silva', '333.333.333-33', 'Street C, 789', '11-99999-3333', 'Unemployed', 'REJECTED', 3);
 
 -- ========================
--- CARTÃO (1:1 com beneficiário aprovado/reprovado)
+-- CARD (1:1 with beneficiary)
 -- ========================
-INSERT INTO Cartao (NumeroUnico, ID_Beneficiario) VALUES
+INSERT INTO card (unique_number, beneficiary_id) VALUES
                                                       ('CARD-001', 1),
                                                       ('CARD-002', 2),
                                                       ('CARD-003', 3);
 
 -- ========================
--- CATEGORIA
+-- CATEGORY
 -- ========================
-INSERT INTO Categoria (Nome) VALUES
-                                 ('Alimentos'),
-                                 ('Roupas'),
-                                 ('Higiene');
+INSERT INTO category (name) VALUES
+                                 ('Food'),
+                                 ('Clothing'),
+                                 ('Hygiene');
 
 -- ========================
 -- ITEM
 -- ========================
-INSERT INTO Item (Descricao, QuantidadeEstoque, CodigoEtiqueta, ID_Categoria) VALUES
-                                                                                  ('Arroz 5kg', 50, 'ETQ-ARROZ-01', 1),
-                                                                                  ('Camiseta M', 30, 'ETQ-CAMISETA-01', 2),
-                                                                                  ('Sabonete 90g', 100, 'ETQ-SABONETE-01', 3);
+INSERT INTO item (description, stock_quantity, tag_code, category_id) VALUES
+                                                                                  ('Rice 5kg', 50, 'ETQ-RICE-01', 1),
+                                                                                  ('T-shirt M', 30, 'ETQ-TSHIRT-01', 2),
+                                                                                  ('Soap 90g', 100, 'ETQ-SOAP-01', 3);
 
 -- ========================
--- DOADOR
+-- DONOR
 -- ========================
-INSERT INTO Doador (Nome, CPF_CNPJ, Contato) VALUES
-                                                 ('Supermercado Bom Preço', '12.345.678/0001-99', '11-4002-8922'),
+INSERT INTO donor (name, cpf_cnpj, contact) VALUES
+                                                 ('Good Price Supermarket', '12.345.678/0001-99', '11-4002-8922'),
                                                  ('Maria Costa', '444.444.444-44', '11-98888-4444'),
-                                                 ('Associação Solidária', '98.765.432/0001-11', '11-97777-1234');
+                                                 ('Solidarity Association', '98.765.432/0001-11', '11-97777-1234');
 
 -- ========================
--- DOAÇÃO
+-- DONATION
 -- ========================
-INSERT INTO Doacao (ID_UsuarioRecebedor, ID_Doador) VALUES
-                                                        (2, 1), -- Bruno recebe doação do supermercado
-                                                        (2, 2), -- Bruno recebe doação da Maria
-                                                        (1, 3); -- Ana recebe doação da associação
+INSERT INTO donation (receiver_user_id, donor_id) VALUES
+                                                        (2, 1), -- Attendant receives donation from supermarket
+                                                        (2, 2), -- Attendant receives donation from Maria
+                                                        (1, 3); -- Administrator receives donation from association
 
 -- ========================
--- RETIRADA
+-- WITHDRAWAL
 -- ========================
-INSERT INTO Retirada (ID_Beneficiario, ID_UsuarioAtendente) VALUES
-                                                                (1, 2), -- Bruno atende Maria
-                                                                (2, 2), -- Bruno atende José
-                                                                (3, 2); -- Bruno atende Clara
+INSERT INTO withdrawal (beneficiary_id, attendant_user_id) VALUES
+                                                                (1, 2), -- Attendant attends Maria
+                                                                (2, 2), -- Attendant attends José
+                                                                (3, 2); -- Attendant attends Clara
 
 -- ========================
--- ITEM_DOADO (entrada → aumenta estoque)
+-- ITEM_DONATED (entry → increases stock)
 -- ========================
-INSERT INTO Item_Doado (ID_Doacao, ID_Item, Quantidade) VALUES
-                                                            (1, 1, 10), -- 10 sacos de arroz
-                                                            (2, 2, 5),  -- 5 camisetas
-                                                            (3, 3, 20); -- 20 sabonetes
+INSERT INTO item_donated (donation_id, item_id, quantity) VALUES
+                                                            (1, 1, 10), -- 10 rice bags
+                                                            (2, 2, 5),  -- 5 t-shirts
+                                                            (3, 3, 20); -- 20 soaps
 
 -- ========================
--- ITEM_RETIRADO (saída → diminui estoque)
+-- ITEM_WITHDRAWN (exit → decreases stock)
 -- ========================
-INSERT INTO Item_Retirado (ID_Retirada, ID_Item, Quantidade) VALUES
-                                                                 (1, 1, 2), -- Maria retira 2 sacos de arroz
-                                                                 (2, 2, 1), -- José retira 1 camiseta
-                                                                 (3, 3, 3); -- Clara retira 3 sabonetes
-
-USE doacoes;
-
--- ========================
--- PERFIL
--- ========================
-INSERT INTO Perfil (Nome, Descricao) VALUES
-                                         ('Administrador', 'Acesso total ao sistema'),
-                                         ('Atendente', 'Realiza cadastros e retiradas'),
-                                         ('Avaliador', 'Aprova ou reprova beneficiários');
-
--- ========================
--- USUÁRIO
--- (senha simulada com hash fictício)
--- ========================
-INSERT INTO Usuario (Nome, Login, Email, SenhaHash, Status, ID_Perfil) VALUES
-                                                                           ('Ana Souza', 'ana', 'ana@email.com', '$2a$10$hash1', 'Ativo', 1),
-                                                                           ('Bruno Lima', 'bruno', 'bruno@email.com', '$2a$10$hash2', 'Ativo', 2),
-                                                                           ('Carlos Mendes', 'carlos', 'carlos@email.com', '$2a$10$hash3', 'Ativo', 3);
-
--- ========================
--- BENEFICIÁRIO
--- ========================
-INSERT INTO Beneficiario (NomeCompleto, CPF, Endereco, Contato, DadosSocioeconomicos, Status, ID_UsuarioAprovador)
-VALUES
-    ('Maria Oliveira', '111.111.111-11', 'Rua A, 123', '11-99999-1111', 'Baixa renda', 'Aprovado', 3),
-    ('José Santos', '222.222.222-22', 'Rua B, 456', '11-99999-2222', 'Situação de vulnerabilidade', 'Pendente', NULL),
-    ('Clara Silva', '333.333.333-33', 'Rua C, 789', '11-99999-3333', 'Desempregada', 'Reprovado', 3);
-
--- ========================
--- CARTÃO (1:1 com beneficiário aprovado/reprovado)
--- ========================
-INSERT INTO Cartao (NumeroUnico, ID_Beneficiario) VALUES
-                                                      ('CARD-001', 1),
-                                                      ('CARD-002', 2),
-                                                      ('CARD-003', 3);
-
--- ========================
--- CATEGORIA
--- ========================
-INSERT INTO Categoria (Nome) VALUES
-                                 ('Alimentos'),
-                                 ('Roupas'),
-                                 ('Higiene');
-
--- ========================
--- ITEM
--- ========================
-INSERT INTO Item (Descricao, QuantidadeEstoque, CodigoEtiqueta, ID_Categoria) VALUES
-                                                                                  ('Arroz 5kg', 50, 'ETQ-ARROZ-01', 1),
-                                                                                  ('Camiseta M', 30, 'ETQ-CAMISETA-01', 2),
-                                                                                  ('Sabonete 90g', 100, 'ETQ-SABONETE-01', 3);
-
--- ========================
--- DOADOR
--- ========================
-INSERT INTO Doador (Nome, CPF_CNPJ, Contato) VALUES
-                                                 ('Supermercado Bom Preço', '12.345.678/0001-99', '11-4002-8922'),
-                                                 ('Maria Costa', '444.444.444-44', '11-98888-4444'),
-                                                 ('Associação Solidária', '98.765.432/0001-11', '11-97777-1234');
-
--- ========================
--- DOAÇÃO
--- ========================
-INSERT INTO Doacao (ID_UsuarioRecebedor, ID_Doador) VALUES
-                                                        (2, 1), -- Bruno recebe doação do supermercado
-                                                        (2, 2), -- Bruno recebe doação da Maria
-                                                        (1, 3); -- Ana recebe doação da associação
-
--- ========================
--- RETIRADA
--- ========================
-INSERT INTO Retirada (ID_Beneficiario, ID_UsuarioAtendente) VALUES
-                                                                (1, 2), -- Bruno atende Maria
-                                                                (2, 2), -- Bruno atende José
-                                                                (3, 2); -- Bruno atende Clara
-
--- ========================
--- ITEM_DOADO (entrada → aumenta estoque)
--- ========================
-INSERT INTO Item_Doado (ID_Doacao, ID_Item, Quantidade) VALUES
-                                                            (1, 1, 10), -- 10 sacos de arroz
-                                                            (2, 2, 5),  -- 5 camisetas
-                                                            (3, 3, 20); -- 20 sabonetes
-
--- ========================
--- ITEM_RETIRADO (saída → diminui estoque)
--- ========================
-INSERT INTO Item_Retirado (ID_Retirada, ID_Item, Quantidade) VALUES
-                                                                 (1, 1, 2), -- Maria retira 2 sacos de arroz
-                                                                 (2, 2, 1), -- José retira 1 camiseta
-                                                                 (3, 3, 3); -- Clara retira 3 sabonetes
+INSERT INTO item_withdrawn (withdrawal_id, item_id, quantity) VALUES
+                                                                 (1, 1, 2), -- Maria withdraws 2 rice bags
+                                                                 (2, 2, 1), -- José withdraws 1 t-shirt
+                                                                 (3, 3, 3); -- Clara withdraws 3 soaps
 
