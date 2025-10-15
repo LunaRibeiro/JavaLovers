@@ -3,8 +3,9 @@ import Navigation from '../components/navegation/navegation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 
-export default function Sucesso() {
+function SucessoContent() {
   const router = useRouter();
   const params = useSearchParams();
   const tipo = params.get('tipo');
@@ -12,6 +13,7 @@ export default function Sucesso() {
   if (tipo === 'doadores') destino = '/cadastrodoador/lista';
   if (tipo === 'beneficiarios') destino = '/cadastrobeneficiario/lista';
   if (tipo === 'voluntarios') destino = '/cadastrovoluntario/lista';
+
   return (
     <div style={{
       minHeight: "100vh",
@@ -62,5 +64,28 @@ export default function Sucesso() {
         </button>
       </div>
     </div>
+  );
+}
+
+export default function Sucesso() {
+  return (
+    <Suspense fallback={
+      <div style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "#f7f7fa"
+      }}>
+        <div style={{
+          fontSize: "1.2rem",
+          color: "#1976d2"
+        }}>
+          Carregando...
+        </div>
+      </div>
+    }>
+      <SucessoContent />
+    </Suspense>
   );
 } 
