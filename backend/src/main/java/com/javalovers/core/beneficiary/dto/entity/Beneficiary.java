@@ -2,7 +2,6 @@ package com.javalovers.core.beneficiary.dto.entity;
 
 import com.javalovers.core.beneficiarystatus.BeneficiaryStatus;
 import com.javalovers.core.user.domain.entity.User;
-import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -12,29 +11,23 @@ import lombok.Setter;
 
 import java.util.Date;
 
-@Entity
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
 public class Beneficiary {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long beneficiaryId;
 
     @NotBlank
     private String fullName;
 
     @NotBlank
-    @Column(unique = true)
     private String cpf;
     private String phone;
     private String socioeconomicData;
     private Date registrationDate;
     private BeneficiaryStatus beneficiaryStatus;
 
-    @ManyToOne
-    @JoinColumn(name = "approver_user_id", nullable = false)
     private User approverId;
 }

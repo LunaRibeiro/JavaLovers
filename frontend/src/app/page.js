@@ -2,20 +2,33 @@
 import Image from "next/image";
 import styles from "./page.module.css";
 import { useState } from "react";
+import authService from "../services/authService";
+import { useApi } from "../hooks/useApi";
 
 
 export default function Login() {
   const [error, setError] = useState("");
+  const { loading, execute, clearError } = useApi();
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
+    clearError();
+    
     const form = e.target;
-    const senha = form[1].value;
-    if (senha !== "1234") {
-      setError("Usuário ou senha incorretos.");
-    } else {
+    const username = form[0].value;
+    const password = form[1].value;
+
+    if (!username || !password) {
+      setError("Usuário e senha são obrigatórios.");
+      return;
+    }
+
+    try {
+      await execute(() => authService.login(username, password));
       alert("Login realizado com sucesso!");
       window.location.href = "/home";
+    } catch (err) {
+      setError("Usuário ou senha incorretos.");
     }
   }
 
@@ -30,7 +43,9 @@ export default function Login() {
           <form className={styles.loginForm} onSubmit={handleSubmit}>
             <input type="text" placeholder="Usuário" className={styles.input} />
             <input type="password" placeholder="Senha" className={styles.input} />
-            <button type="submit" className={styles.button}>Login</button>
+            <button type="submit" className={styles.button} disabled={loading}>
+              {loading ? 'Entrando...' : 'Login'}
+            </button>
           </form>
           {error && <div className={styles.errorMsg}>{error}</div>}
           <a href="#" className={styles.forgot}>Esqueci minha senha</a>

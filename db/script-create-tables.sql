@@ -4,119 +4,113 @@
 -- =====================================================================
 
 -- Opcional: crie um schema dedicado
-CREATE DATABASE IF NOT EXISTS doacoes
+CREATE DATABASE IF NOT EXISTS sanem
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
-USE doacoes;
+USE sanem;
 
 -- =====================================================================
 -- TABELAS BÁSICAS
 -- =====================================================================
 
-CREATE TABLE Perfil (
-  ID_Perfil       INT AUTO_INCREMENT PRIMARY KEY,
-  Nome            VARCHAR(100) NOT NULL,
-  Descricao       VARCHAR(255) NULL,
-  UNIQUE KEY uq_perfil_nome (Nome)
+CREATE TABLE profile (
+  profile_id       INT AUTO_INCREMENT PRIMARY KEY,
+  name            VARCHAR(100) NOT NULL,
+  description       VARCHAR(255) NULL,
+  UNIQUE KEY uq_profile_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE Usuario (
-  ID_Usuario      INT AUTO_INCREMENT PRIMARY KEY,
-  Nome            VARCHAR(120) NOT NULL,
-  Login           VARCHAR(60)  NOT NULL,
-  Email           VARCHAR(160) NOT NULL,
-  SenhaHash       VARCHAR(255) NOT NULL, -- armazene a senha já criptografada (bcrypt/argon2)
-  Status          ENUM('Ativo','Inativo') NOT NULL DEFAULT 'Ativo',
-  ID_Perfil       INT NOT NULL,
-  CONSTRAINT fk_usuario_perfil
-    FOREIGN KEY (ID_Perfil) REFERENCES Perfil(ID_Perfil)
+CREATE TABLE app_user (
+  user_id      INT AUTO_INCREMENT PRIMARY KEY,
+  name            VARCHAR(120) NOT NULL,
+  login           VARCHAR(60)  NOT NULL,
+  email           VARCHAR(160) NOT NULL,
+  password_hash       VARCHAR(255) NOT NULL, -- armazene a senha já criptografada (bcrypt/argon2)
+  status          ENUM('ACTIVE','INACTIVE') NOT NULL DEFAULT 'ACTIVE',
+  profile_id       INT NOT NULL,
+  CONSTRAINT fk_user_profile
+    FOREIGN KEY (profile_id) REFERENCES profile(profile_id)
     ON UPDATE RESTRICT ON DELETE RESTRICT,
-  UNIQUE KEY uq_usuario_login (Login),
-  UNIQUE KEY uq_usuario_email (Email)
+  UNIQUE KEY uq_user_login (login),
+  UNIQUE KEY uq_user_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE Beneficiario (
-  ID_Beneficiario     INT AUTO_INCREMENT PRIMARY KEY,
-  NomeCompleto        VARCHAR(160) NOT NULL,
-  CPF                 VARCHAR(14)  NOT NULL, -- formate/valide na aplicação; aqui garantimos unicidade
-  Endereco            VARCHAR(255) NULL,
-  Contato             VARCHAR(120) NULL,
-  DadosSocioeconomicos TEXT NULL,
-  DataCadastro        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  Status              ENUM('Pendente','Aprovado','Reprovado') NOT NULL DEFAULT 'Pendente',
-  ID_UsuarioAprovador INT NULL,
-  CONSTRAINT fk_benef_aprovador
-    FOREIGN KEY (ID_UsuarioAprovador) REFERENCES Usuario(ID_Usuario)
+CREATE TABLE beneficiary (
+  beneficiary_id     INT AUTO_INCREMENT PRIMARY KEY,
+  full_name        VARCHAR(160) NOT NULL,
+  cpf                 VARCHAR(14)  NOT NULL, -- formate/valide na aplicação; aqui garantimos unicidade
+  address            VARCHAR(255) NULL,
+  phone             VARCHAR(120) NULL,
+  socioeconomic_data TEXT NULL,
+  beneficiary_status              ENUM('PENDING','APPROVED','REJECTED') NOT NULL DEFAULT 'PENDING',
+  approver_user_id INT NULL,
+  CONSTRAINT fk_benef_approver
+    FOREIGN KEY (approver_user_id) REFERENCES app_user(user_id)
     ON UPDATE RESTRICT ON DELETE SET NULL,
-  UNIQUE KEY uq_benef_cpf (CPF)
+  UNIQUE KEY uq_benef_cpf (cpf)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 1:1 com Beneficiário (um cartão por beneficiário)
-CREATE TABLE Cartao (
-  ID_Cartao        INT AUTO_INCREMENT PRIMARY KEY,
-  NumeroUnico      VARCHAR(64) NOT NULL,
-  DataEmissao      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  ID_Beneficiario  INT NOT NULL,
-  CONSTRAINT fk_cartao_benef
-    FOREIGN KEY (ID_Beneficiario) REFERENCES Beneficiario(ID_Beneficiario)
+CREATE TABLE card (
+  card_id        INT AUTO_INCREMENT PRIMARY KEY,
+  unique_number      VARCHAR(64) NOT NULL,
+  beneficiary_id  INT NOT NULL,
+  CONSTRAINT fk_card_benef
+    FOREIGN KEY (beneficiary_id) REFERENCES beneficiary(beneficiary_id)
     ON UPDATE RESTRICT ON DELETE RESTRICT,
-  UNIQUE KEY uq_cartao_numero (NumeroUnico),
-  UNIQUE KEY uq_cartao_benef (ID_Beneficiario)  -- garante 1:1
+  UNIQUE KEY uq_card_number (unique_number),
+  UNIQUE KEY uq_card_benef (beneficiary_id)  -- garante 1:1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE Categoria (
-  ID_Categoria INT AUTO_INCREMENT PRIMARY KEY,
-  Nome         VARCHAR(100) NOT NULL,
-  UNIQUE KEY uq_categoria_nome (Nome)
+CREATE TABLE category (
+  category_id INT AUTO_INCREMENT PRIMARY KEY,
+  name         VARCHAR(100) NOT NULL,
+  UNIQUE KEY uq_category_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE Item (
-  ID_Item            INT AUTO_INCREMENT PRIMARY KEY,
-  Descricao          VARCHAR(200) NOT NULL,
-  QuantidadeEstoque  INT NOT NULL DEFAULT 0,
-  CodigoEtiqueta     VARCHAR(64) NULL, -- código de barras / QR code (pode ser único, se desejar)
-  ID_Categoria       INT NOT NULL,
-  CONSTRAINT fk_item_categoria
-    FOREIGN KEY (ID_Categoria) REFERENCES Categoria(ID_Categoria)
+CREATE TABLE item (
+  item_id            INT AUTO_INCREMENT PRIMARY KEY,
+  description          VARCHAR(200) NOT NULL,
+  stock_quantity  INT NOT NULL DEFAULT 0,
+  tag_code     VARCHAR(64) NULL, -- código de barras / QR code (pode ser único, se desejar)
+  category_id       INT NOT NULL,
+  CONSTRAINT fk_item_category
+    FOREIGN KEY (category_id) REFERENCES category(category_id)
     ON UPDATE RESTRICT ON DELETE RESTRICT,
-  UNIQUE KEY uq_item_codigo (CodigoEtiqueta),
-  CHECK (QuantidadeEstoque >= 0)
+  UNIQUE KEY uq_item_code (tag_code),
+  CHECK (stock_quantity >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE Doador (
-  ID_Doador   INT AUTO_INCREMENT PRIMARY KEY,
-  Nome        VARCHAR(160) NOT NULL,
-  CPF_CNPJ    VARCHAR(20)  NULL,
-  Contato     VARCHAR(160) NULL,
-  UNIQUE KEY uq_doador_cpfcnpj (CPF_CNPJ)
+CREATE TABLE donor (
+  donor_id   INT AUTO_INCREMENT PRIMARY KEY,
+  name        VARCHAR(160) NOT NULL,
+  cpf_cnpj    VARCHAR(20)  NULL,
+  contact     VARCHAR(160) NULL,
+  UNIQUE KEY uq_donor_cpfcnpj (cpf_cnpj)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE Doacao (
-  ID_Doacao           INT AUTO_INCREMENT PRIMARY KEY,
-  DataDoacao          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  ID_UsuarioRecebedor INT NOT NULL,
-  ID_Doador           INT NULL,
-  CONSTRAINT fk_doacao_usuario
-    FOREIGN KEY (ID_UsuarioRecebedor) REFERENCES Usuario(ID_Usuario)
+CREATE TABLE donation (
+  id           INT AUTO_INCREMENT PRIMARY KEY,
+  receiver_user_id INT NOT NULL,
+  donor_id           INT NULL,
+  CONSTRAINT fk_donation_user
+    FOREIGN KEY (receiver_user_id) REFERENCES app_user(user_id)
     ON UPDATE RESTRICT ON DELETE RESTRICT,
-  CONSTRAINT fk_doacao_doador
-    FOREIGN KEY (ID_Doador) REFERENCES Doador(ID_Doador)
-    ON UPDATE RESTRICT ON DELETE SET NULL,
-  KEY idx_doacao_data (DataDoacao)
+  CONSTRAINT fk_donation_donor
+    FOREIGN KEY (donor_id) REFERENCES donor(donor_id)
+    ON UPDATE RESTRICT ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE Retirada (
-  ID_Retirada         INT AUTO_INCREMENT PRIMARY KEY,
-  DataRetirada        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  ID_Beneficiario     INT NOT NULL,
-  ID_UsuarioAtendente INT NOT NULL,
-  CONSTRAINT fk_retirada_benef
-    FOREIGN KEY (ID_Beneficiario) REFERENCES Beneficiario(ID_Beneficiario)
+CREATE TABLE withdrawal (
+  withdrawal_id         INT AUTO_INCREMENT PRIMARY KEY,
+  beneficiary_id     INT NOT NULL,
+  attendant_user_id INT NOT NULL,
+  CONSTRAINT fk_withdrawal_benef
+    FOREIGN KEY (beneficiary_id) REFERENCES beneficiary(beneficiary_id)
     ON UPDATE RESTRICT ON DELETE RESTRICT,
-  CONSTRAINT fk_retirada_usuario
-    FOREIGN KEY (ID_UsuarioAtendente) REFERENCES Usuario(ID_Usuario)
-    ON UPDATE RESTRICT ON DELETE RESTRICT,
-  KEY idx_retirada_data (DataRetirada)
+  CONSTRAINT fk_withdrawal_user
+    FOREIGN KEY (attendant_user_id) REFERENCES app_user(user_id)
+    ON UPDATE RESTRICT ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================================
@@ -124,33 +118,33 @@ CREATE TABLE Retirada (
 -- =====================================================================
 
 -- Doações contêm vários itens (entrada -> aumenta estoque)
-CREATE TABLE Item_Doado (
-  ID_Doacao   INT NOT NULL,
-  ID_Item     INT NOT NULL,
-  Quantidade  INT NOT NULL,
-  PRIMARY KEY (ID_Doacao, ID_Item),
-  CONSTRAINT fk_itemdoado_doacao
-    FOREIGN KEY (ID_Doacao) REFERENCES Doacao(ID_Doacao)
+CREATE TABLE item_donated (
+  donation_id   INT NOT NULL,
+  item_id     INT NOT NULL,
+  quantity  INT NOT NULL,
+  PRIMARY KEY (donation_id, item_id),
+  CONSTRAINT fk_itemdonated_donation
+    FOREIGN KEY (donation_id) REFERENCES donation(id)
     ON UPDATE RESTRICT ON DELETE RESTRICT,
-  CONSTRAINT fk_itemdoado_item
-    FOREIGN KEY (ID_Item) REFERENCES Item(ID_Item)
+  CONSTRAINT fk_itemdonated_item
+    FOREIGN KEY (item_id) REFERENCES item(item_id)
     ON UPDATE RESTRICT ON DELETE RESTRICT,
-  CHECK (Quantidade > 0)
+  CHECK (quantity > 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Retiradas contêm vários itens (saída -> diminui estoque)
-CREATE TABLE Item_Retirado (
-  ID_Retirada INT NOT NULL,
-  ID_Item     INT NOT NULL,
-  Quantidade  INT NOT NULL,
-  PRIMARY KEY (ID_Retirada, ID_Item),
-  CONSTRAINT fk_itemret_retirada
-    FOREIGN KEY (ID_Retirada) REFERENCES Retirada(ID_Retirada)
+CREATE TABLE item_withdrawn (
+  withdrawal_id INT NOT NULL,
+  item_id     INT NOT NULL,
+  quantity  INT NOT NULL,
+  PRIMARY KEY (withdrawal_id, item_id),
+  CONSTRAINT fk_itemwithdrawn_withdrawal
+    FOREIGN KEY (withdrawal_id) REFERENCES withdrawal(withdrawal_id)
     ON UPDATE RESTRICT ON DELETE RESTRICT,
-  CONSTRAINT fk_itemret_item
-    FOREIGN KEY (ID_Item) REFERENCES Item(ID_Item)
+  CONSTRAINT fk_itemwithdrawn_item
+    FOREIGN KEY (item_id) REFERENCES item(item_id)
     ON UPDATE RESTRICT ON DELETE RESTRICT,
-  CHECK (Quantidade > 0)
+  CHECK (quantity > 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================================
@@ -162,89 +156,89 @@ CREATE TABLE Item_Retirado (
 DELIMITER $$
 
 -- ---------- DOAÇÃO (ENTRADA) ----------
-CREATE TRIGGER trg_item_doado_ai
-AFTER INSERT ON Item_Doado
+CREATE TRIGGER trg_item_donated_ai
+AFTER INSERT ON item_donated
 FOR EACH ROW
 BEGIN
-  UPDATE Item
-    SET QuantidadeEstoque = QuantidadeEstoque + NEW.Quantidade
-  WHERE ID_Item = NEW.ID_Item;
+  UPDATE item
+    SET stock_quantity = stock_quantity + NEW.quantity
+  WHERE item_id = NEW.item_id;
 END$$
 
-CREATE TRIGGER trg_item_doado_au
-AFTER UPDATE ON Item_Doado
+CREATE TRIGGER trg_item_donated_au
+AFTER UPDATE ON item_donated
 FOR EACH ROW
 BEGIN
   -- Ajusta pelo delta (novo - antigo)
-  UPDATE Item
-    SET QuantidadeEstoque = QuantidadeEstoque + (NEW.Quantidade - OLD.Quantidade)
-  WHERE ID_Item = NEW.ID_Item;
+  UPDATE item
+    SET stock_quantity = stock_quantity + (NEW.quantity - OLD.quantity)
+  WHERE item_id = NEW.item_id;
 END$$
 
-CREATE TRIGGER trg_item_doado_ad
-AFTER DELETE ON Item_Doado
+CREATE TRIGGER trg_item_donated_ad
+AFTER DELETE ON item_donated
 FOR EACH ROW
 BEGIN
-  UPDATE Item
-    SET QuantidadeEstoque = QuantidadeEstoque - OLD.Quantidade
-  WHERE ID_Item = OLD.ID_Item;
+  UPDATE item
+    SET stock_quantity = stock_quantity - OLD.quantity
+  WHERE item_id = OLD.item_id;
 END$$
 
 -- ---------- RETIRADA (SAÍDA) ----------
 -- Antes de retirar, valida se há estoque suficiente
-CREATE TRIGGER trg_item_retirado_bi
-BEFORE INSERT ON Item_Retirado
+CREATE TRIGGER trg_item_withdrawn_bi
+BEFORE INSERT ON item_withdrawn
 FOR EACH ROW
 BEGIN
   DECLARE estoque_atual INT;
-  SELECT QuantidadeEstoque INTO estoque_atual FROM Item WHERE ID_Item = NEW.ID_Item FOR UPDATE;
-  IF estoque_atual < NEW.Quantidade THEN
+  SELECT stock_quantity INTO estoque_atual FROM item WHERE item_id = NEW.item_id FOR UPDATE;
+  IF estoque_atual < NEW.quantity THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Estoque insuficiente para a retirada';
   END IF;
 END$$
 
-CREATE TRIGGER trg_item_retirado_ai
-AFTER INSERT ON Item_Retirado
+CREATE TRIGGER trg_item_withdrawn_ai
+AFTER INSERT ON item_withdrawn
 FOR EACH ROW
 BEGIN
-  UPDATE Item
-    SET QuantidadeEstoque = QuantidadeEstoque - NEW.Quantidade
-  WHERE ID_Item = NEW.ID_Item;
+  UPDATE item
+    SET stock_quantity = stock_quantity - NEW.quantity
+  WHERE item_id = NEW.item_id;
 END$$
 
 -- Atualização: valida e aplica delta
-CREATE TRIGGER trg_item_retirado_bu
-BEFORE UPDATE ON Item_Retirado
+CREATE TRIGGER trg_item_withdrawn_bu
+BEFORE UPDATE ON item_withdrawn
 FOR EACH ROW
 BEGIN
   DECLARE estoque_atual INT;
   DECLARE delta INT;
-  SET delta = NEW.Quantidade - OLD.Quantidade; -- se positivo, sairá mais; se negativo, "devolve"
+  SET delta = NEW.quantity - OLD.quantity; -- se positivo, sairá mais; se negativo, "devolve"
   IF delta > 0 THEN
-    SELECT QuantidadeEstoque INTO estoque_atual FROM Item WHERE ID_Item = NEW.ID_Item FOR UPDATE;
+    SELECT stock_quantity INTO estoque_atual FROM item WHERE item_id = NEW.item_id FOR UPDATE;
     IF estoque_atual < delta THEN
       SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Estoque insuficiente para atualizar a retirada';
     END IF;
   END IF;
 END$$
 
-CREATE TRIGGER trg_item_retirado_au
-AFTER UPDATE ON Item_Retirado
+CREATE TRIGGER trg_item_withdrawn_au
+AFTER UPDATE ON item_withdrawn
 FOR EACH ROW
 BEGIN
-  UPDATE Item
-    SET QuantidadeEstoque = QuantidadeEstoque - (NEW.Quantidade - OLD.Quantidade)
-  WHERE ID_Item = NEW.ID_Item;
+  UPDATE item
+    SET stock_quantity = stock_quantity - (NEW.quantity - OLD.quantity)
+  WHERE item_id = NEW.item_id;
 END$$
 
 -- Deleção: devolve estoque
-CREATE TRIGGER trg_item_retirado_ad
-AFTER DELETE ON Item_Retirado
+CREATE TRIGGER trg_item_withdrawn_ad
+AFTER DELETE ON item_withdrawn
 FOR EACH ROW
 BEGIN
-  UPDATE Item
-    SET QuantidadeEstoque = QuantidadeEstoque + OLD.Quantidade
-  WHERE ID_Item = OLD.ID_Item;
+  UPDATE item
+    SET stock_quantity = stock_quantity + OLD.quantity
+  WHERE item_id = OLD.item_id;
 END$$
 
 DELIMITER ;
@@ -253,8 +247,8 @@ DELIMITER ;
 -- ÍNDICES ÚTEIS (BUSCAS COMUNS)
 -- =====================================================================
 
-CREATE INDEX idx_benef_nome    ON Beneficiario (NomeCompleto);
-CREATE INDEX idx_item_desc     ON Item (Descricao);
-CREATE INDEX idx_item_cat      ON Item (ID_Categoria);
-CREATE INDEX idx_doacao_user   ON Doacao (ID_UsuarioRecebedor);
-CREATE INDEX idx_retirada_user ON Retirada (ID_UsuarioAtendente);
+CREATE INDEX idx_benef_name    ON beneficiary (full_name);
+CREATE INDEX idx_item_desc     ON item (description);
+CREATE INDEX idx_item_cat      ON item (category_id);
+CREATE INDEX idx_donation_user   ON donation (receiver_user_id);
+CREATE INDEX idx_withdrawal_user ON withdrawal (attendant_user_id);

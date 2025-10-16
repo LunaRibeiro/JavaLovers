@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   mysql:
     image: mysql:8.0
@@ -7,11 +5,11 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: javalovers
-      MYSQL_USER: javalovers
-      MYSQL_PASSWORD: javalovers123
+      MYSQL_DATABASE: sanem
+      MYSQL_USER: sanem
+      MYSQL_PASSWORD: sanem123
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./db/script-create-tables.sql:/docker-entrypoint-initdb.d/01-create-tables.sql
@@ -26,9 +24,9 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/javalovers?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: javalovers
-      SPRING_DATASOURCE_PASSWORD: javalovers123
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/sanem?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: sanem
+      SPRING_DATASOURCE_PASSWORD: sanem123
     depends_on:
       - mysql
     networks:
@@ -41,7 +39,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      REACT_APP_API_URL: http://localhost:8080/api
+      NEXT_PUBLIC_API_URL: http://backend:8080/api
     depends_on:
       - backend
     networks:

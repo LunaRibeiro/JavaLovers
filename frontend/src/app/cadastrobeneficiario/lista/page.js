@@ -8,29 +8,31 @@ import styles from "./lista.module.css";
 // import formStyles from "../cadastrobeneficiario.module.css";
 import { useRouter } from "next/navigation";
 import modalStyles from "./lista.module.css";
+import apiService from "../../../services/api";
+import { mapBeneficiaryFromBackend } from "../../../services/dataMapper";
+import { useApiList } from "../../../hooks/useApi";
 
 export default function ListaBeneficiarios() {
-  const [beneficiarios, setBeneficiarios] = useState([]); // [{id, nomeCompleto, email, telefoneCelular, nif, ...}]
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const router = useRouter();
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editForm, setEditForm] = useState(null); // objeto do beneficiário a editar
   const [editError, setEditError] = useState("");
   const [editLoading, setEditLoading] = useState(false);
+  
+  const {
+    data: beneficiarios,
+    loading,
+    error,
+    loadData,
+    removeItem,
+    clearError
+  } = useApiList(apiService.getBeneficiaries);
 
   useEffect(() => {
-    setLoading(true);
-    setError("");
-    try {
-      const mock = JSON.parse(localStorage.getItem('mockBeneficiarios') || '[]');
-      setBeneficiarios(mock);
-    } catch (err) {
-      setError("Erro ao carregar beneficiários do mock");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    loadData().catch(err => {
+      console.error("Erro ao carregar beneficiários:", err);
+    });
+  }, [loadData]);
 
   const handleEdit = (id) => {
     router.push(`/cadastrobeneficiario/editar/${id}`);
