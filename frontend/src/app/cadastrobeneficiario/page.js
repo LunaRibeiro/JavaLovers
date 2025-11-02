@@ -7,6 +7,7 @@ import styles from "./cadastrobeneficiario.module.css";
 import apiService from "../../services/api";
 import { mapBeneficiaryToBackend } from "../../services/dataMapper";
 import { useApi } from "../../hooks/useApi";
+import { useNotification } from "../../components/notifications/NotificationProvider";
 
 const CadastroBeneficiario = () => {
   const [form, setForm] = useState({
@@ -23,6 +24,7 @@ const CadastroBeneficiario = () => {
   });
   const router = useRouter();
   const { loading, error, execute, clearError } = useApi();
+  const { showNotification } = useNotification();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -78,10 +80,10 @@ const CadastroBeneficiario = () => {
         pontoReferencia: ""
       });
       
-      alert("Beneficiário cadastrado com sucesso!");
-      router.push("/sucesso?tipo=beneficiarios");
+      showNotification("Beneficiário cadastrado com sucesso!", "success");
+      setTimeout(() => router.push("/sucesso?tipo=beneficiarios"), 1000);
     } catch (err) {
-      console.error("Erro ao cadastrar beneficiário:", err);
+      showNotification(err.message || "Erro ao cadastrar beneficiário", "error");
     }
   }
 

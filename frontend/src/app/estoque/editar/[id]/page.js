@@ -7,12 +7,14 @@ import styles from "../../estoque.module.css";
 import apiService from "../../../../services/api";
 import { mapItemFromBackend, mapItemToBackend } from "../../../../services/dataMapper";
 import { useApi } from "../../../../hooks/useApi";
+import { useNotification } from "../../../../components/notifications/NotificationProvider";
 
 const EditarItem = () => {
   const router = useRouter();
   const params = useParams();
   const id = params.id;
   const { loading, error, execute, clearError } = useApi();
+  const { showNotification } = useNotification();
   const [loadingData, setLoadingData] = useState(true);
   
   const [form, setForm] = useState({
@@ -36,8 +38,8 @@ const EditarItem = () => {
         });
       } catch (err) {
         console.error("Erro ao carregar item:", err);
-        alert("Erro ao carregar item. Redirecionando...");
-        router.push("/estoque");
+        showNotification(err.message || "Erro ao carregar item", "error");
+        setTimeout(() => router.push("/estoque"), 2000);
       } finally {
         setLoadingData(false);
       }
@@ -67,10 +69,10 @@ const EditarItem = () => {
       // Chama a API de atualização
       await execute(() => apiService.updateItem(id, itemData));
       
-      alert("Item atualizado com sucesso!");
-      router.push("/estoque");
+      showNotification("Item atualizado com sucesso!", "success");
+      setTimeout(() => router.push("/estoque"), 1000);
     } catch (err) {
-      console.error("Erro ao atualizar item:", err);
+      showNotification(err.message || "Erro ao atualizar item", "error");
     }
   }
 

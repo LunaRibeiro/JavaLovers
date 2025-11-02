@@ -8,9 +8,13 @@ import apiService from "../../../services/api";
 import { mapDonorFromBackend } from "../../../services/dataMapper";
 import { useApiList } from "../../../hooks/useApi";
 import { FaPlus } from "react-icons/fa";
+import { useNotification } from "../../../components/notifications/NotificationProvider";
+import ConfirmationModal from "../../../components/confirmation/ConfirmationModal";
 
 export default function ListaDoadores() {
   const router = useRouter();
+  const { showNotification } = useNotification();
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, action: null, message: "", title: "" });
   
   const {
     data: doadoresRaw,
@@ -36,17 +40,28 @@ export default function ListaDoadores() {
     router.push(`/cadastrodoador/editar/${id}`);
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Tem certeza que deseja excluir este doador?")) return;
-    
-    try {
-      await apiService.deleteDonor(id);
-      await loadDataRaw();
-      alert("Doador excluído com sucesso!");
-    } catch (err) {
-      console.error("Erro ao excluir doador:", err);
-      alert("Erro ao excluir doador. Tente novamente.");
+  const handleDelete = (id) => {
+    setConfirmModal({
+      isOpen: true,
+      action: async () => {
+        try {
+          await apiService.deleteDonor(id);
+          await loadDataRaw();
+          showNotification("Doador excluído com sucesso!", "success");
+        } catch (err) {
+          showNotification(err.message || "Erro ao excluir doador", "error");
+        }
+      },
+      message: "Tem certeza que deseja excluir este doador?",
+      title: "Confirmar Exclusão"
+    });
+  };
+
+  const handleConfirm = async () => {
+    if (confirmModal.action) {
+      await confirmModal.action();
     }
+    setConfirmModal({ isOpen: false, action: null, message: "", title: "" });
   };
 
 
@@ -122,6 +137,16 @@ export default function ListaDoadores() {
           </div>
         </div>
       </div>
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, action: null, message: "", title: "" })}
+        onConfirm={handleConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText="Confirmar"
+        cancelText="Cancelar"
+        type="danger"
+      />
     </div>
   );
 } 

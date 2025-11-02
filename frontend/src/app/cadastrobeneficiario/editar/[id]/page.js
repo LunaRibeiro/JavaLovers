@@ -7,12 +7,14 @@ import styles from "../../cadastrobeneficiario.module.css";
 import apiService from "../../../../services/api";
 import { mapBeneficiaryFromBackend } from "../../../../services/dataMapper";
 import { useApi } from "../../../../hooks/useApi";
+import { useNotification } from "../../../../components/notifications/NotificationProvider";
 
 const EditarBeneficiario = () => {
   const router = useRouter();
   const params = useParams();
   const id = params.id;
   const { loading, error, execute, clearError } = useApi();
+  const { showNotification } = useNotification();
   const [loadingData, setLoadingData] = useState(true);
   
   const [form, setForm] = useState({
@@ -50,8 +52,8 @@ const EditarBeneficiario = () => {
         });
       } catch (err) {
         console.error("Erro ao carregar beneficiário:", err);
-        alert("Erro ao carregar beneficiário. Redirecionando...");
-        router.push("/cadastrobeneficiario/lista");
+        showNotification(err.message || "Erro ao carregar beneficiário", "error");
+        setTimeout(() => router.push("/cadastrobeneficiario/lista"), 2000);
       } finally {
         setLoadingData(false);
       }
@@ -117,10 +119,10 @@ const EditarBeneficiario = () => {
       // Chama a API de atualização
       await execute(() => apiService.updateBeneficiary(id, beneficiaryData));
       
-      alert("Beneficiário atualizado com sucesso!");
-      router.push("/cadastrobeneficiario/lista");
+      showNotification("Beneficiário atualizado com sucesso!", "success");
+      setTimeout(() => router.push("/cadastrobeneficiario/lista"), 1000);
     } catch (err) {
-      console.error("Erro ao atualizar beneficiário:", err);
+      showNotification(err.message || "Erro ao atualizar beneficiário", "error");
     }
   }
 

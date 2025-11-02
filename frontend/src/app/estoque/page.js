@@ -8,10 +8,12 @@ import apiService from '../../services/api';
 import { mapItemFromBackend, mapItemToBackend } from '../../services/dataMapper';
 import { useApiList } from '../../hooks/useApi';
 import { FaPlus } from 'react-icons/fa';
+import { useNotification } from '../../components/notifications/NotificationProvider';
+import ConfirmationModal from '../../components/confirmation/ConfirmationModal';
 
 export default function EstoquePage() {
+  const { showNotification } = useNotification();
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [novoProduto, setNovoProduto] = useState({ nome: '', categoria: '', tamanho: '', quantidade: '' });
   const router = useRouter();
@@ -50,9 +52,9 @@ export default function EstoquePage() {
       
       setNovoProduto({ nome: '', categoria: '', tamanho: '', quantidade: '' });
       setShowAddModal(false);
+      showNotification("Produto adicionado com sucesso!", "success");
     } catch (err) {
-      console.error("Erro ao adicionar produto:", err);
-      alert("Erro ao adicionar produto. Tente novamente.");
+      showNotification(err.message || "Erro ao adicionar produto", "error");
     }
   }
 
@@ -62,18 +64,15 @@ export default function EstoquePage() {
     try {
       await apiService.deleteItem(itemToDelete.id);
       await loadDataRaw();
-      setShowDeleteModal(false);
       setItemToDelete(null);
-      alert("Produto excluído com sucesso!");
+      showNotification("Produto excluído com sucesso!", "success");
     } catch (err) {
-      console.error("Erro ao excluir produto:", err);
-      alert("Erro ao excluir produto. Tente novamente.");
+      showNotification(err.message || "Erro ao excluir produto", "error");
     }
   }
 
   function openDeleteModal(item) {
     setItemToDelete(item);
-    setShowDeleteModal(true);
   }
 
   function handleEditProduto(item) {
@@ -220,29 +219,16 @@ export default function EstoquePage() {
         </div>
       )}
 
-      {/* Modal Excluir */}
-      {showDeleteModal && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent}>
-            <h2 className={styles.titulo} style={{ fontSize: '1.3rem', marginBottom: 16 }}>Confirmar Exclusão</h2>
-            <p>Tem certeza que deseja excluir o produto <b>{itemToDelete?.nome}</b>?</p>
-            <div className={styles.modalButtonGroup}>
-              <button 
-                className={styles.cancelButton} 
-                onClick={() => setShowDeleteModal(false)}
-              >
-                Não
-              </button>
-              <button 
-                className={styles.submitButton} 
-                onClick={handleDeleteProduto}
-              >
-                Sim
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmationModal
+        isOpen={!!itemToDelete}
+        onClose={() => setItemToDelete(null)}
+        onConfirm={handleDeleteProduto}
+        title="Confirmar Exclusão"
+        message={itemToDelete ? `Tem certeza que deseja excluir o produto "${itemToDelete.nome}"?` : ""}
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        type="danger"
+      />
     </div>
   );
 }

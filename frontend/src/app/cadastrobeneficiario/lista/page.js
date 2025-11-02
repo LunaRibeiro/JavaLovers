@@ -12,11 +12,15 @@ import { mapBeneficiaryFromBackend } from "../../../services/dataMapper";
 import { useApiList } from "../../../hooks/useApi";
 import { FaPlus, FaCheck, FaTimes } from "react-icons/fa";
 import authService from "../../../services/authService";
+import { useNotification } from "../../../components/notifications/NotificationProvider";
+import ConfirmationModal from "../../../components/confirmation/ConfirmationModal";
 
 export default function ListaBeneficiarios() {
   const router = useRouter();
+  const { showNotification } = useNotification();
   const [approvingId, setApprovingId] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, action: null, message: "", title: "" });
   
   const {
     data: beneficiariosRaw,
@@ -54,43 +58,70 @@ export default function ListaBeneficiarios() {
     router.push(`/cadastrobeneficiario/editar/${id}`);
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Tem certeza que deseja excluir este beneficiário?")) return;
-    try {
-      await apiService.deleteBeneficiary(id);
-      await loadDataRaw();
-      alert("Beneficiário excluído com sucesso!");
-    } catch (err) {
-      setError("Erro ao excluir beneficiário");
-    }
+  const handleDelete = (id) => {
+    setConfirmModal({
+      isOpen: true,
+      action: async () => {
+        try {
+          await apiService.deleteBeneficiary(id);
+          await loadDataRaw();
+          showNotification("Beneficiário excluído com sucesso!", "success");
+        } catch (err) {
+          showNotification(err.message || "Erro ao excluir beneficiário", "error");
+        }
+      },
+      message: "Tem certeza que deseja excluir este beneficiário?",
+      title: "Confirmar Exclusão"
+    });
   };
 
-  const handleApprove = async (id) => {
-    if (!window.confirm("Tem certeza que deseja aprovar este beneficiário?")) return;
-    setApprovingId(id);
-    try {
-      await apiService.approveBeneficiary(id, 'APPROVED');
-      await loadDataRaw();
-      alert("Beneficiário aprovado com sucesso!");
-    } catch (err) {
-      setError("Erro ao aprovar beneficiário");
-    } finally {
-      setApprovingId(null);
-    }
+  const handleApprove = (id) => {
+    setConfirmModal({
+      isOpen: true,
+      action: async () => {
+        setApprovingId(id);
+        try {
+          await apiService.approveBeneficiary(id, 'APPROVED');
+          await loadDataRaw();
+          showNotification("Beneficiário aprovado com sucesso!", "success");
+        } catch (err) {
+          showNotification(err.message || "Erro ao aprovar beneficiário", "error");
+        } finally {
+          setApprovingId(null);
+        }
+      },
+      message: "Tem certeza que deseja aprovar este beneficiário?",
+      title: "Confirmar Aprovação",
+      type: "success"
+    });
   };
 
-  const handleReject = async (id) => {
-    if (!window.confirm("Tem certeza que deseja reprovar este beneficiário?")) return;
-    setApprovingId(id);
-    try {
-      await apiService.approveBeneficiary(id, 'REJECTED');
-      await loadDataRaw();
-      alert("Beneficiário reprovado com sucesso!");
-    } catch (err) {
-      setError("Erro ao reprovar beneficiário");
-    } finally {
-      setApprovingId(null);
+  const handleReject = (id) => {
+    setConfirmModal({
+      isOpen: true,
+      action: async () => {
+        setApprovingId(id);
+        try {
+          await apiService.approveBeneficiary(id, 'REJECTED');
+          await loadDataRaw();
+          showNotification("Beneficiário reprovado com sucesso!", "success");
+        } catch (err) {
+          showNotification(err.message || "Erro ao reprovar beneficiário", "error");
+        } finally {
+          setApprovingId(null);
+        }
+      },
+      message: "Tem certeza que deseja reprovar este beneficiário?",
+      title: "Confirmar Reprovação",
+      type: "danger"
+    });
+  };
+
+  const handleConfirm = async () => {
+    if (confirmModal.action) {
+      await confirmModal.action();
     }
+    setConfirmModal({ isOpen: false, action: null, message: "", title: "" });
   };
 
   const getStatusLabel = (status) => {
@@ -214,6 +245,16 @@ export default function ListaBeneficiarios() {
           </div>
         </div>
       </div>
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, action: null, message: "", title: "" })}
+        onConfirm={handleConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText="Confirmar"
+        cancelText="Cancelar"
+        type={confirmModal.type || "danger"}
+      />
     </div>
   );
 }

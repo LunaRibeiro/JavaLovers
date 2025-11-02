@@ -5,12 +5,16 @@ import Navigation from "../../components/navegation/navegation";
 import styles from "./lista.module.css";
 import { useRouter } from "next/navigation";
 import { FaPlus } from "react-icons/fa";
+import { useNotification } from "../../../components/notifications/NotificationProvider";
+import ConfirmationModal from "../../../components/confirmation/ConfirmationModal";
 
 export default function ListaVoluntarios() {
+  const { showNotification } = useNotification();
   const [voluntarios, setVoluntarios] = useState([]); // [{id, nomeCompleto, email, telefoneCelular, ...}]
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const router = useRouter();
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, action: null, message: "", title: "" });
 
   useEffect(() => {
     setLoading(true);
@@ -30,19 +34,33 @@ export default function ListaVoluntarios() {
   };
 
   const handleDelete = (id) => {
-    if (!window.confirm("Tem certeza que deseja excluir este voluntário?")) return;
-    setLoading(true);
-    setError("");
-    try {
-      const novos = voluntarios.filter((v) => v.id !== id);
-      setVoluntarios(novos);
-      localStorage.setItem('mockVoluntarios', JSON.stringify(novos));
-      alert("Voluntário excluído com sucesso!");
-    } catch (err) {
-      setError("Erro ao excluir voluntário");
-    } finally {
-      setLoading(false);
+    setConfirmModal({
+      isOpen: true,
+      action: () => {
+        setLoading(true);
+        setError("");
+        try {
+          const novos = voluntarios.filter((v) => v.id !== id);
+          setVoluntarios(novos);
+          localStorage.setItem('mockVoluntarios', JSON.stringify(novos));
+          showNotification("Voluntário excluído com sucesso!", "success");
+        } catch (err) {
+          showNotification("Erro ao excluir voluntário", "error");
+          setError("Erro ao excluir voluntário");
+        } finally {
+          setLoading(false);
+        }
+      },
+      message: "Tem certeza que deseja excluir este voluntário?",
+      title: "Confirmar Exclusão"
+    });
+  };
+
+  const handleConfirm = async () => {
+    if (confirmModal.action) {
+      await confirmModal.action();
     }
+    setConfirmModal({ isOpen: false, action: null, message: "", title: "" });
   };
 
 
@@ -118,6 +136,16 @@ export default function ListaVoluntarios() {
           </div>
         </div>
       </div>
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, action: null, message: "", title: "" })}
+        onConfirm={handleConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText="Confirmar"
+        cancelText="Cancelar"
+        type="danger"
+      />
     </div>
   );
 } 

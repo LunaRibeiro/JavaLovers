@@ -7,12 +7,14 @@ import styles from "../../cadastrodoador.module.css";
 import apiService from "../../../../services/api";
 import { mapDonorFromBackend, mapDonorToBackend } from "../../../../services/dataMapper";
 import { useApi } from "../../../../hooks/useApi";
+import { useNotification } from "../../../../components/notifications/NotificationProvider";
 
 const EditarDoador = () => {
   const router = useRouter();
   const params = useParams();
   const id = params.id;
   const { loading, error, execute, clearError } = useApi();
+  const { showNotification } = useNotification();
   const [loadingData, setLoadingData] = useState(true);
   const [validationError, setValidationError] = useState("");
   
@@ -47,8 +49,8 @@ const EditarDoador = () => {
         });
       } catch (err) {
         console.error("Erro ao carregar doador:", err);
-        alert("Erro ao carregar doador. Redirecionando...");
-        router.push("/cadastrodoador/lista");
+        showNotification(err.message || "Erro ao carregar doador", "error");
+        setTimeout(() => router.push("/cadastrodoador/lista"), 2000);
       } finally {
         setLoadingData(false);
       }
@@ -86,10 +88,10 @@ const EditarDoador = () => {
       // Chama a API de atualização
       await execute(() => apiService.updateDonor(id, donorData));
       
-      alert("Doador atualizado com sucesso!");
-      router.push("/cadastrodoador/lista");
+      showNotification("Doador atualizado com sucesso!", "success");
+      setTimeout(() => router.push("/cadastrodoador/lista"), 1000);
     } catch (err) {
-      console.error("Erro ao atualizar doador:", err);
+      showNotification(err.message || "Erro ao atualizar doador", "error");
     }
   }
 
