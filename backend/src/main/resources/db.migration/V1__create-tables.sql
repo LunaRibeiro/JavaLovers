@@ -28,7 +28,6 @@ create table beneficiary
     address                         varchar(255),
     phone                           varchar(120),
     socioeconomic_data              TEXT,
-    registration_date               timestamp(6) not null default current_timestamp,
     beneficiary_status              varchar(20) check (beneficiary_status in ('PENDING', 'APPROVED', 'REJECTED')) not null default 'PENDING',
     approver_user_id                bigint,
     primary key (beneficiary_id),
@@ -39,7 +38,6 @@ create table beneficiary
 create table card (
     card_id                         bigserial,
     unique_number                   varchar(64) not null unique,
-    issue_date                      timestamp(6) not null default current_timestamp,
     beneficiary_id                  bigint not null unique,
     primary key (card_id),
 

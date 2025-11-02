@@ -26,7 +26,7 @@ export default function EstoquePage() {
     addItem,
     updateItem,
     removeItem
-  } = useApiList(apiService.getItems);
+  } = useApiList((filters) => apiService.getItems(filters));
 
   useEffect(() => {
     loadData().catch(err => {

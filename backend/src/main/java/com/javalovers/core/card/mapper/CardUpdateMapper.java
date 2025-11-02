@@ -9,7 +9,6 @@ public class CardUpdateMapper {
 
     public void update(Card card, CardFormDTO cardFormDTO) {
         card.setUniqueNumber(cardFormDTO.uniqueNumber());
-        card.setIssueDate(cardFormDTO.issueDate());
         card.setBeneficiaryId(cardFormDTO.beneficiaryId());
     }
 }

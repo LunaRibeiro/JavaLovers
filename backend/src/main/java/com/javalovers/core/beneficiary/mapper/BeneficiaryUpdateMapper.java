@@ -13,7 +13,6 @@ public class BeneficiaryUpdateMapper {
         beneficiary.setCpf(beneficiaryFormDTO.cpf());
         beneficiary.setPhone(beneficiaryFormDTO.phone());
         beneficiary.setSocioeconomicData(beneficiaryFormDTO.socioeconomicData());
-        beneficiary.setRegistrationDate(beneficiaryFormDTO.registrationDate());
         beneficiary.setBeneficiaryStatus(beneficiaryFormDTO.beneficiaryStatus());
     }
 }

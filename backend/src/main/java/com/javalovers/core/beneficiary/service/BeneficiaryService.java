@@ -11,14 +11,19 @@ import com.javalovers.core.beneficiary.mapper.BeneficiaryDTOMapper;
 import com.javalovers.core.beneficiary.mapper.BeneficiaryUpdateMapper;
 import com.javalovers.core.beneficiary.repository.BeneficiaryRepository;
 import com.javalovers.core.beneficiary.specification.BeneficiarySpecification;
+import com.javalovers.core.card.entity.Card;
+import com.javalovers.core.card.repository.CardRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +33,8 @@ public class BeneficiaryService {
     private final BeneficiaryCreateMapper beneficiaryCreateMapper;
     private final BeneficiaryDTOMapper beneficiaryDTOMapper;
     private final BeneficiaryUpdateMapper beneficiaryUpdateMapper;
+    private final CardRepository cardRepository;
+    private final EntityManager entityManager;
 
     public Beneficiary generateBeneficiary(BeneficiaryFormDTO beneficiaryFormDTO) {
         return beneficiaryCreateMapper.convert(beneficiaryFormDTO);
@@ -49,7 +56,44 @@ public class BeneficiaryService {
         beneficiaryUpdateMapper.update(beneficiary, beneficiaryFormDTO);
     }
 
+    @Transactional
     public void delete(Beneficiary beneficiary) {
+        Long beneficiaryId = beneficiary.getBeneficiaryId();
+        
+        // Primeiro, buscar os IDs dos withdrawals associados ao beneficiário
+        Query selectWithdrawalIdsQuery = entityManager.createNativeQuery(
+            "SELECT withdrawal_id FROM withdrawal WHERE beneficiary_id = ?"
+        );
+        selectWithdrawalIdsQuery.setParameter(1, beneficiaryId);
+        @SuppressWarnings("unchecked")
+        List<Object> withdrawalIds = selectWithdrawalIdsQuery.getResultList();
+        
+        // Deletar os registros em item_withdrawn que referenciam esses withdrawals
+        if (!withdrawalIds.isEmpty()) {
+            for (Object withdrawalIdObj : withdrawalIds) {
+                Long withdrawalId = ((Number) withdrawalIdObj).longValue();
+                Query deleteItemWithdrawnQuery = entityManager.createNativeQuery(
+                    "DELETE FROM item_withdrawn WHERE withdrawal_id = ?"
+                );
+                deleteItemWithdrawnQuery.setParameter(1, withdrawalId);
+                deleteItemWithdrawnQuery.executeUpdate();
+            }
+        }
+        
+        // Deletar os withdrawals associados ao beneficiário
+        Query deleteWithdrawalQuery = entityManager.createNativeQuery(
+            "DELETE FROM withdrawal WHERE beneficiary_id = ?"
+        );
+        deleteWithdrawalQuery.setParameter(1, beneficiaryId);
+        deleteWithdrawalQuery.executeUpdate();
+        
+        // Deletar o card associado ao beneficiário (se existir) antes de deletar o beneficiário
+        Optional<Card> cardOptional = cardRepository.findByBeneficiaryId(beneficiaryId);
+        
+        if (cardOptional.isPresent()) {
+            cardRepository.delete(cardOptional.get());
+        }
+        
         beneficiaryRepository.delete(beneficiary);
     }
 
@@ -68,19 +112,16 @@ public class BeneficiaryService {
         SearchCriteria<String> cpfCriteria = SpecificationHelper.generateInnerLikeCriteria("cpf", beneficiaryFilterDTO.cpf());
         SearchCriteria<String> phoneCriteria = SpecificationHelper.generateInnerLikeCriteria("phone", beneficiaryFilterDTO.phone());
         SearchCriteria<String> socioeconomicDataCriteria = SpecificationHelper.generateInnerLikeCriteria("socioeconomicData", beneficiaryFilterDTO.socioeconomicData());
-        SearchCriteria<Date> registrationDateCriteria = SpecificationHelper.generateLessThanCriteria("registrationDate", beneficiaryFilterDTO.registrationDate());
 
         Specification<Beneficiary> fullNameSpecification = new BeneficiarySpecification(fullNameCriteria);
         Specification<Beneficiary> cpfSpecification = new BeneficiarySpecification(cpfCriteria);
         Specification<Beneficiary> phoneSpecification = new BeneficiarySpecification(phoneCriteria);
         Specification<Beneficiary> socioeconomicDataSpecification = new BeneficiarySpecification(socioeconomicDataCriteria);
-        Specification<Beneficiary> registrationDateSpecification = new BeneficiarySpecification(registrationDateCriteria);
 
         return Specification.where(fullNameSpecification)
                 .and(cpfSpecification)
                 .and(phoneSpecification)
-                .and(socioeconomicDataSpecification)
-                .and(registrationDateSpecification);
+                .and(socioeconomicDataSpecification);
     }
 
     public Page<BeneficiaryDTO> generateBeneficiaryDTOPage(Page<Beneficiary> beneficiaryPage) {

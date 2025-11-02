@@ -12,7 +12,6 @@ public class CardDTOMapper {
         return new CardDTO(
                 card.getCardId(),
                 card.getUniqueNumber(),
-                card.getIssueDate(),
                 card.getBeneficiaryId()
         );
     }

@@ -23,7 +23,7 @@ export default function ListaDoadores() {
     loadData,
     removeItem,
     clearError
-  } = useApiList(apiService.getDonors);
+  } = useApiList((filters) => apiService.getDonors(filters));
 
   useEffect(() => {
     loadData().catch(err => {

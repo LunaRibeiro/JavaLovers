@@ -20,7 +20,6 @@ public class BeneficiaryDTOMapper {
                 beneficiary.getCpf(),
                 beneficiary.getPhone(),
                 beneficiary.getSocioeconomicData(),
-                beneficiary.getRegistrationDate(),
                 beneficiary.getBeneficiaryStatus(),
                 userDTOMapper.convert(beneficiary.getApproverId())
         );

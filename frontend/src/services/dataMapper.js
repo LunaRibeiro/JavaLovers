@@ -74,7 +74,6 @@ export const mapBeneficiaryToBackend = (frontendBeneficiary) => {
       complemento: frontendBeneficiary.complemento,
       pontoReferencia: frontendBeneficiary.pontoReferencia,
     }),
-    registrationDate: new Date(),
     beneficiaryStatus: 'PENDING', // Status padrão
   };
 };
