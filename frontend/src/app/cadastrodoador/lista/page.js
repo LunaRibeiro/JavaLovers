@@ -8,6 +8,7 @@ import modalStyles from "./lista.module.css";
 import apiService from "../../../services/api";
 import { mapDonorFromBackend } from "../../../services/dataMapper";
 import { useApiList } from "../../../hooks/useApi";
+import { validateCPForCNPJ, validateEmail } from "../../../utils/validators";
 
 export default function ListaDoadores() {
   const router = useRouter();
@@ -15,7 +16,7 @@ export default function ListaDoadores() {
   const [editForm, setEditForm] = useState(null); // objeto do doador a editar
   const [editError, setEditError] = useState("");
   const [editLoading, setEditLoading] = useState(false);
-  
+
   const {
     data: doadores,
     loading,
@@ -37,7 +38,7 @@ export default function ListaDoadores() {
 
   const handleDelete = async (id) => {
     if (!window.confirm("Tem certeza que deseja excluir este doador?")) return;
-    
+
     try {
       await apiService.deleteDonor(id);
       removeItem(id);
@@ -65,15 +66,24 @@ export default function ListaDoadores() {
     e.preventDefault();
     setEditLoading(true);
     setEditError("");
-    // Validação de CPF (opcional, mas se preenchido deve ter 11 dígitos)
-    const cpfLimpo = editForm.cpf.replace(/\D/g, "");
-    if (cpfLimpo.length > 0 && cpfLimpo.length !== 11) {
-      setEditError("CPF deve conter 11 dígitos numéricos.");
+
+    // Validação de CPF/CNPJ
+    const cpfCnpjValidation = validateCPForCNPJ(editForm.cpf);
+    if (!cpfCnpjValidation.valid) {
+      setEditError(cpfCnpjValidation.message);
+      setEditLoading(false);
+      return;
+    }
+
+    // Validação de email
+    const emailValidation = validateEmail(editForm.email);
+    if (!emailValidation.valid) {
+      setEditError(emailValidation.message);
       setEditLoading(false);
       return;
     }
     try {
-      const novos = doadores.map((d) => d.id === editForm.id ? { ...editForm, cpf: cpfLimpo } : d);
+      const novos = doadores.map((d) => d.id === editForm.id ? { ...editForm, cpf: cpfCnpjValidation.cleaned } : d);
       setDoadores(novos);
       localStorage.setItem('mockDoadores', JSON.stringify(novos));
       setEditModalOpen(false);

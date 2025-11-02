@@ -7,6 +7,7 @@ import styles from "./cadastrobeneficiario.module.css";
 import apiService from "../../services/api";
 import { mapBeneficiaryToBackend } from "../../services/dataMapper";
 import { useApi } from "../../hooks/useApi";
+import { validateCPF, validateEmail, validatePhone } from "../../utils/validators";
 
 const CadastroBeneficiario = () => {
   const [form, setForm] = useState({
@@ -21,49 +22,105 @@ const CadastroBeneficiario = () => {
     complemento: "",
     pontoReferencia: ""
   });
+  const [fieldErrors, setFieldErrors] = useState({});
   const router = useRouter();
   const { loading, error, execute, clearError } = useApi();
 
+  const validateField = (name, value) => {
+    let validation = { valid: true, message: "" };
+
+    switch (name) {
+      case "email":
+        validation = validateEmail(value);
+        break;
+      case "telefoneCelular":
+        validation = validatePhone(value);
+        break;
+      case "cpfCrnm":
+        if (value) {
+          validation = validateCPF(value);
+        }
+        break;
+      case "nif":
+        // Validação básica de NIF (apenas números)
+        if (value && !/^\d+$/.test(value.replace(/\D/g, ""))) {
+          validation = { valid: false, message: "NIF deve conter apenas números" };
+        }
+        break;
+      default:
+        validation = { valid: true };
+    }
+
+    setFieldErrors(prev => ({
+      ...prev,
+      [name]: validation.valid ? "" : validation.message
+    }));
+
+    return validation.valid;
+  };
+
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: value });
+    
+    // Validação em tempo real para campos críticos (email, telefone, CPF) assim que começam a digitar
+    // Para outros campos, valida apenas se já foi tocado ou tem conteúdo
+    if (name === "email" || name === "telefoneCelular" || name === "cpfCrnm" || name === "nif") {
+      if (value.length > 0 || fieldErrors[name] !== undefined) {
+        validateField(name, value);
+      }
+    } else if (fieldErrors[name] !== undefined || value.length > 0) {
+      validateField(name, value);
+    }
+  };
+
+  const handleBlur = (e) => {
+    // Valida quando o usuário sai do campo
+    validateField(e.target.name, e.target.value);
   };
 
   async function handleSubmit(e) {
     e.preventDefault();
     clearError();
+
+    // Valida todos os campos antes de submeter
+    const emailValid = validateField("email", form.email);
+    const phoneValid = validateField("telefoneCelular", form.telefoneCelular);
     
-    // Validação: pelo menos um dos campos (CPF/CRNM ou NIF) deve ser preenchido
     const cpfCrnmLimpo = form.cpfCrnm.replace(/\D/g, "");
     const nifLimpo = form.nif.replace(/\D/g, "");
     
+    let cpfValid = true;
+    if (cpfCrnmLimpo.length > 0) {
+      cpfValid = validateField("cpfCrnm", form.cpfCrnm);
+    }
+
+    // Validação: pelo menos um dos campos (CPF/CRNM ou NIF) deve ser preenchido
     if (cpfCrnmLimpo.length === 0 && nifLimpo.length === 0) {
       setError("É obrigatório preencher pelo menos um dos campos: CPF/CRNM ou NIF.");
       return;
     }
-    
-    // Se CPF/CRNM foi preenchido, validar formato (11 dígitos para CPF)
-    if (cpfCrnmLimpo.length > 0 && cpfCrnmLimpo.length !== 11) {
-      setError("CPF/CRNM deve conter 11 dígitos numéricos.");
-      return;
-    }
 
-    // Validação de email (regex simples)
-    if (!/\S+@\S+\.\S+/.test(form.email)) {
-      setError("Por favor, insira um e-mail válido.");
+    // Verifica se há erros de validação
+    if (!emailValid || !phoneValid || !cpfValid) {
+      setError("Por favor, corrija os erros nos campos antes de enviar.");
       return;
     }
 
     try {
-      // Prepara dados para o backend
+      // Prepara dados para o backend (phone precisa ser apenas números)
+      const phoneValidation = validatePhone(form.telefoneCelular);
+      const phoneCleaned = phoneValidation.cleaned;
       const beneficiaryData = mapBeneficiaryToBackend({
         ...form,
-        cpfCrnm: cpfCrnmLimpo,
-        nif: nifLimpo
+        cpfCrnm: cpfCrnmLimpo.length > 0 ? cpfCrnmLimpo : null,
+        nif: nifLimpo.length > 0 ? nifLimpo : null,
+        telefoneCelular: phoneCleaned
       });
 
       // Chama a API
       await execute(() => apiService.createBeneficiary(beneficiaryData));
-      
+
       // Limpa o formulário
       setForm({
         nomeCompleto: "",
@@ -77,7 +134,8 @@ const CadastroBeneficiario = () => {
         complemento: "",
         pontoReferencia: ""
       });
-      
+      setFieldErrors({});
+
       alert("Beneficiário cadastrado com sucesso!");
       router.push("/sucesso?tipo=beneficiarios");
     } catch (err) {
@@ -97,71 +155,89 @@ const CadastroBeneficiario = () => {
             {/* Linha Nome e E-mail */}
             <div className={styles.formGroup}>
               <label htmlFor="nomeCompleto"><b>Nome completo*</b></label>
-              <input 
+              <input
                 id="nomeCompleto"
-                name="nomeCompleto" 
-                value={form.nomeCompleto} 
-                onChange={handleChange} 
-                required 
-                placeholder="Fulano da Silva" 
+                name="nomeCompleto"
+                value={form.nomeCompleto}
+                onChange={handleChange}
+                required
+                placeholder="Fulano da Silva"
               />
             </div>
             <div className={styles.formGroup}>
               <label htmlFor="email"><b>E-mail*</b></label>
-              <input 
+              <input
                 id="email"
-                name="email" 
+                name="email"
                 type="email" // Usar type="email" para validação básica de navegador
-                value={form.email} 
-                onChange={handleChange} 
-                required 
-                placeholder="fulano@gmail.com" 
+                value={form.email}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                required
+                placeholder="fulano@gmail.com"
+                className={fieldErrors.email ? styles.inputError : ""}
               />
+              {fieldErrors.email && <span className={styles.fieldError}>{fieldErrors.email}</span>}
             </div>
 
             {/* Linha Telefone, CPF/CRNM, NIF */}
             <div className={styles.formGroup}>
               <label htmlFor="telefoneCelular"><b>Telefone*</b></label>
-              <input 
+              <input
                 id="telefoneCelular"
-                name="telefoneCelular" 
-                value={form.telefoneCelular} 
-                onChange={handleChange} 
-                required 
-                placeholder="(45) 9 9988-7766" 
-                type="tel" 
+                name="telefoneCelular"
+                value={form.telefoneCelular}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                required
+                placeholder="(45) 9 9988-7766"
+                type="tel"
+                className={fieldErrors.telefoneCelular ? styles.inputError : ""}
               />
+              {fieldErrors.telefoneCelular && <span className={styles.fieldError}>{fieldErrors.telefoneCelular}</span>}
             </div>
             <div className={styles.formGroup}>
               <label htmlFor="cpfCrnm"><b>CPF/CRNM (opcional se NIF for preenchido)</b></label>
-              <input 
+              <input
                 id="cpfCrnm"
-                name="cpfCrnm" 
-                type="text" 
+                name="cpfCrnm"
+                type="text"
                 pattern="[0-9]*" // Permite apenas números
-                maxLength={11} 
-                value={form.cpfCrnm} 
-                onChange={e => { 
-                  const onlyNums = e.target.value.replace(/\D/g, ""); 
-                  setForm({ ...form, cpfCrnm: onlyNums }); 
-                }} 
-                placeholder="11122233355" 
+                maxLength={11}
+                value={form.cpfCrnm}
+                onChange={e => {
+                  const onlyNums = e.target.value.replace(/\D/g, "");
+                  setForm({ ...form, cpfCrnm: onlyNums });
+                  if (fieldErrors.cpfCrnm !== undefined || onlyNums.length > 0) {
+                    validateField("cpfCrnm", onlyNums);
+                  }
+                }}
+                onBlur={handleBlur}
+                placeholder="11122233355"
+                className={fieldErrors.cpfCrnm ? styles.inputError : ""}
               />
+              {fieldErrors.cpfCrnm && <span className={styles.fieldError}>{fieldErrors.cpfCrnm}</span>}
             </div>
             <div className={styles.formGroup}>
               <label htmlFor="nif"><b>NIF (opcional se CPF/CRNM for preenchido)</b></label>
-              <input 
+              <input
                 id="nif"
-                name="nif" 
-                type="text" 
+                name="nif"
+                type="text"
                 pattern="[0-9]*" // Permite apenas números
-                value={form.nif} 
-                onChange={e => { 
-                  const onlyNums = e.target.value.replace(/\D/g, ""); 
-                  setForm({ ...form, nif: onlyNums }); 
-                }} 
-                placeholder="123456789" 
+                value={form.nif}
+                onChange={e => {
+                  const onlyNums = e.target.value.replace(/\D/g, "");
+                  setForm({ ...form, nif: onlyNums });
+                  if (fieldErrors.nif !== undefined || onlyNums.length > 0) {
+                    validateField("nif", onlyNums);
+                  }
+                }}
+                onBlur={handleBlur}
+                placeholder="123456789"
+                className={fieldErrors.nif ? styles.inputError : ""}
               />
+              {fieldErrors.nif && <span className={styles.fieldError}>{fieldErrors.nif}</span>}
             </div>
 
             <hr className={styles.separador} />
@@ -169,61 +245,61 @@ const CadastroBeneficiario = () => {
             {/* Linha Endereço, Número, Complemento */}
             <div className={styles.formGroupFullWidth}> {/* Ocupa a largura total da linha */}
               <label htmlFor="endereco"><b>Endereço*</b></label>
-              <input 
+              <input
                 id="endereco"
-                name="endereco" 
-                value={form.endereco} 
-                onChange={handleChange} 
-                required 
-                placeholder="Rua da Água" 
+                name="endereco"
+                value={form.endereco}
+                onChange={handleChange}
+                required
+                placeholder="Rua da Água"
               />
             </div>
             <div className={styles.formGroup}>
               <label htmlFor="numero"><b>Número*</b></label>
-              <input 
+              <input
                 id="numero"
-                name="numero" 
-                type="number" 
-                value={form.numero} 
-                onChange={handleChange} 
-                required 
-                placeholder="2015" 
+                name="numero"
+                type="number"
+                value={form.numero}
+                onChange={handleChange}
+                required
+                placeholder="2015"
               />
             </div>
             <div className={styles.formGroup}>
               <label htmlFor="complemento"><b>Complemento</b></label> {/* Tornando Complemento opcional */}
-              <input 
+              <input
                 id="complemento"
-                name="complemento" 
-                value={form.complemento} 
-                onChange={handleChange} 
-                placeholder="Ap 307" 
+                name="complemento"
+                value={form.complemento}
+                onChange={handleChange}
+                placeholder="Ap 307"
               />
             </div>
 
             {/* Linha Bairro, Ponto de Referência */}
             <div className={styles.formGroupFullWidth}>
               <label htmlFor="bairro"><b>Bairro*</b></label>
-              <input 
+              <input
                 id="bairro"
-                name="bairro" 
-                value={form.bairro} 
-                onChange={handleChange} 
-                required 
-                placeholder="Centro" 
+                name="bairro"
+                value={form.bairro}
+                onChange={handleChange}
+                required
+                placeholder="Centro"
               />
             </div>
             <div className={styles.formGroupFullWidth}>
               <label htmlFor="pontoReferencia"><b>Ponto de referência</b></label> {/* Tornando Ponto de Referência opcional */}
-              <input 
+              <input
                 id="pontoReferencia"
-                name="pontoReferencia" 
-                value={form.pontoReferencia} 
-                onChange={handleChange} 
-                placeholder="Em frente ao parque" 
+                name="pontoReferencia"
+                value={form.pontoReferencia}
+                onChange={handleChange}
+                placeholder="Em frente ao parque"
               />
             </div>
-            
+
             <button type="submit" disabled={loading}>
               {loading ? "Cadastrando..." : "Cadastrar Beneficiário"}
             </button>
