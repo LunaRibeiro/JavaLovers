@@ -7,8 +7,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.Date;
-
 @Entity
 @Table(name = "card")
 @AllArgsConstructor
@@ -25,10 +23,6 @@ public class Card {
     @NotNull
     @Column(name = "unique_number", unique = true, nullable = false)
     private String uniqueNumber;
-
-    @NotNull
-    @Column(name = "issue_date")
-    private Date issueDate;
 
     @NotNull
     @Column(name = "beneficiary_id", unique = true)

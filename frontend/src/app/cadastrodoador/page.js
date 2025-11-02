@@ -7,6 +7,7 @@ import styles from "./cadastrodoador.module.css";
 import apiService from "../../services/api";
 import { mapDonorToBackend } from "../../services/dataMapper";
 import { useApi } from "../../hooks/useApi";
+import { useNotification } from "../../components/notifications/NotificationProvider";
 import { validateCPForCNPJ, validateEmail, validatePhone } from "../../utils/validators";
 
 const CadastroDoador = () => {
@@ -24,6 +25,7 @@ const CadastroDoador = () => {
   const [fieldErrors, setFieldErrors] = useState({});
   const router = useRouter();
   const { loading, error, execute, clearError } = useApi();
+  const { showNotification } = useNotification();
 
   const validateField = (name, value) => {
     let validation = { valid: true, message: "" };
@@ -112,12 +114,11 @@ const CadastroDoador = () => {
         complemento: "",
         pontoReferencia: ""
       });
-      setFieldErrors({});
-
-      alert("Doador cadastrado com sucesso!");
-      router.push("/sucesso?tipo=doadores");
+      
+      showNotification("Doador cadastrado com sucesso!", "success");
+      setTimeout(() => router.push("/sucesso?tipo=doadores"), 1000);
     } catch (err) {
-      console.error("Erro ao cadastrar doador:", err);
+      showNotification(err.message || "Erro ao cadastrar doador", "error");
     }
   }
 

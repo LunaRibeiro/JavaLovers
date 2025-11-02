@@ -12,7 +12,6 @@ export default function Home() {
   // Opções de navegação para o grid (removido Usuários)
   const navOptions = [
     { href: '/home', label: 'Home', icon: <FaHome /> },
-    { href: '/cadastrooption', label: 'Cadastro', icon: <FaUserPlus /> },
     { href: '/estoque', label: 'Estoque', icon: <FaBoxes /> },
     { href: '/cadastrodoador/lista', label: 'Doadores', icon: <FaHandHoldingHeart /> },
     { href: '/cadastrobeneficiario/lista', label: 'Beneficiários', icon: <FaUsers /> },

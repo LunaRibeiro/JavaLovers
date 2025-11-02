@@ -4,11 +4,13 @@ import styles from "./page.module.css";
 import { useState } from "react";
 import authService from "../services/authService";
 import { useApi } from "../hooks/useApi";
+import { useNotification } from "../components/notifications/NotificationProvider";
 
 
 export default function Login() {
   const [error, setError] = useState("");
   const { loading, execute, clearError } = useApi();
+  const { showNotification } = useNotification();
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -25,9 +27,12 @@ export default function Login() {
 
     try {
       await execute(() => authService.login(username, password));
-      alert("Login realizado com sucesso!");
-      window.location.href = "/home";
+      showNotification("Login realizado com sucesso!", "success");
+      setTimeout(() => {
+        window.location.href = "/home";
+      }, 1000);
     } catch (err) {
+      showNotification(err.message || "Usuário ou senha incorretos", "error");
       setError("Usuário ou senha incorretos.");
     }
   }

@@ -5,8 +5,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-import java.util.Date;
-
 public record BeneficiaryFormDTO(
         @NotBlank(message = "Nome completo é obrigatório")
         @Size(min = 3, max = 255, message = "Nome completo deve ter entre 3 e 255 caracteres")
@@ -20,7 +18,6 @@ public record BeneficiaryFormDTO(
         String phone,
         
         String socioeconomicData,
-        Date registrationDate,
         BeneficiaryStatus beneficiaryStatus
 ) {
 }

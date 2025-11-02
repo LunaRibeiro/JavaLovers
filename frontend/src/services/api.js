@@ -251,6 +251,23 @@ class ApiService {
       method: 'DELETE',
     });
   }
+
+  async approveBeneficiary(id, status) {
+    // Primeiro, buscar o beneficiário atual para obter todos os dados
+    const beneficiary = await this.getBeneficiary(id);
+    
+    // Atualizar o status e manter os outros dados
+    // O backend espera BeneficiaryFormDTO que tem: fullName, cpf, phone, socioeconomicData, beneficiaryStatus
+    const updateData = {
+      fullName: beneficiary.fullName,
+      cpf: beneficiary.cpf,
+      phone: beneficiary.phone || '',
+      socioeconomicData: beneficiary.socioeconomicData || '',
+      beneficiaryStatus: status
+    };
+    
+    return this.updateBeneficiary(id, updateData);
+  }
 }
 
 // Instância singleton do serviço

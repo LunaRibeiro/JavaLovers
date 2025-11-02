@@ -74,13 +74,18 @@
   /* Estilo base do button já vem do global, sobrescrevendo só o que for específico */
   background: var(--color-primary);
   color: #fff;
-  padding: 12px 25px; /* Ajustado para um botão de adição */
-  font-size: 1rem;
+  padding: 12px; /* Ajustado para um botão circular/quadrado */
+  font-size: 1.2rem;
   border-radius: 8px;
   font-weight: 600;
   box-shadow: 0 2px 8px 0 rgba(25, 118, 210, 0.2); /* Usa rgba para consistência */
   transition: background 0.2s ease, transform 0.2s ease;
   flex-shrink: 0; /* Não permite que o botão encolha */
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   /* Remove outras propriedades que já estão em button global, como border e cursor */
 }
 
@@ -164,17 +169,21 @@
 .actionButtons {
   display: flex;
   gap: 8px; /* Espaço entre Editar e Excluir */
-  justify-content: center; /* Centraliza botões na célula */
+  justify-content: flex-end; /* Alinha botões à direita */
   flex-wrap: wrap; /* Para quebrar linha se necessário em mobile */
+  width: 100%;
 }
 
-.editButton, .deleteButton {
+.editButton, .deleteButton, .approveButton, .rejectButton {
   padding: 8px 15px; /* Padding menor para botões da tabela */
   font-size: 0.9rem;
   font-weight: 600;
   border-radius: 6px;
   transition: background 0.2s ease, transform 0.2s ease;
   box-shadow: none; /* Remove sombra para botões menores */
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   /* Propriedades como border, cursor já vêm do global button */
 }
 

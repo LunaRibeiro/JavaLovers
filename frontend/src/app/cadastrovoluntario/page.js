@@ -4,6 +4,7 @@ import MenuBar from "../components/menubar/menubar";
 import Navegation from "../components/navegation/navegation";
 import { useRouter } from "next/navigation";
 import styles from "./cadastrovoluntario.module.css";
+import { useNotification } from "../../components/notifications/NotificationProvider";
 import { validateCPF, validateEmail, validatePhone } from "../../utils/validators";
 
 const CadastroVoluntario = () => {
@@ -22,6 +23,7 @@ const CadastroVoluntario = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+  const { showNotification } = useNotification();
 
   const validateField = (name, value) => {
     let validation = { valid: true, message: "" };
@@ -117,10 +119,10 @@ const CadastroVoluntario = () => {
         complemento: "",
         pontoReferencia: ""
       });
-      setFieldErrors({});
-      alert("Voluntário cadastrado com sucesso!");
-      router.push("/sucesso?tipo=voluntarios");
+      showNotification("Voluntário cadastrado com sucesso!", "success");
+      setTimeout(() => router.push("/sucesso?tipo=voluntarios"), 1000);
     } catch (err) {
+      showNotification(err.message || "Erro ao cadastrar voluntário", "error");
       setError("Erro ao cadastrar voluntário");
     } finally {
       setLoading(false);

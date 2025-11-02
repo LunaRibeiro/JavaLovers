@@ -17,7 +17,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
 import java.util.List;
 
 @Service
@@ -65,15 +64,12 @@ public class CardService {
 
     private Specification<Card> generateSpecification(CardFilterDTO cardFilterDTO) {
         SearchCriteria<String> uniqueNumberCriteria = SpecificationHelper.generateInnerLikeCriteria("uniqueNumber", cardFilterDTO.uniqueNumber());
-        SearchCriteria<Date> issueDateCriteria = SpecificationHelper.generateLessThanCriteria("issueDate", cardFilterDTO.issueDate());
         SearchCriteria<Long> beneficiaryIdCriteria = SpecificationHelper.generateEqualsCriteria("beneficiaryId", cardFilterDTO.beneficiaryId());
 
         Specification<Card> uniqueNumberSpecification = new CardSpecification(uniqueNumberCriteria);
-        Specification<Card> issueDateSpecification = new CardSpecification(issueDateCriteria);
         Specification<Card> beneficiaryIdSpecification = new CardSpecification(beneficiaryIdCriteria);
 
         return Specification.where(uniqueNumberSpecification)
-                .and(issueDateSpecification)
                 .and(beneficiaryIdSpecification);
     }
 

@@ -9,8 +9,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.Date;
-
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
@@ -26,7 +24,6 @@ public class Beneficiary {
     private String cpf;
     private String phone;
     private String socioeconomicData;
-    private Date registrationDate;
     private BeneficiaryStatus beneficiaryStatus;
 
     private User approverId;

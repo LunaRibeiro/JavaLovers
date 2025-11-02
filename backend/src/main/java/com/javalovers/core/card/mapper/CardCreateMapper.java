@@ -10,7 +10,6 @@ public class CardCreateMapper {
     public Card convert(CardFormDTO cardFormDTO) {
         Card card = new Card();
         card.setUniqueNumber(cardFormDTO.uniqueNumber());
-        card.setIssueDate(cardFormDTO.issueDate());
         card.setBeneficiaryId(cardFormDTO.beneficiaryId());
 
         return card;
