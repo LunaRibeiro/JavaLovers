@@ -21,37 +21,74 @@ const CadastroDoador = () => {
     complemento: "",
     pontoReferencia: ""
   });
+  const [fieldErrors, setFieldErrors] = useState({});
   const router = useRouter();
   const { loading, error, execute, clearError } = useApi();
 
+  const validateField = (name, value) => {
+    let validation = { valid: true, message: "" };
+
+    switch (name) {
+      case "email":
+        validation = validateEmail(value);
+        break;
+      case "telefoneCelular":
+        validation = validatePhone(value);
+        break;
+      case "cpf":
+        if (value) {
+          validation = validateCPForCNPJ(value);
+        }
+        break;
+      default:
+        validation = { valid: true };
+    }
+
+    setFieldErrors(prev => ({
+      ...prev,
+      [name]: validation.valid ? "" : validation.message
+    }));
+
+    return validation.valid;
+  };
+
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: value });
+    
+    // Validação em tempo real para campos críticos (email, telefone, CPF) assim que começam a digitar
+    if (name === "email" || name === "telefoneCelular" || name === "cpf") {
+      if (value.length > 0 || fieldErrors[name] !== undefined) {
+        validateField(name, value);
+      }
+    } else if (fieldErrors[name] !== undefined || value.length > 0) {
+      validateField(name, value);
+    }
+  };
+
+  const handleBlur = (e) => {
+    // Valida quando o usuário sai do campo
+    validateField(e.target.name, e.target.value);
   };
 
   async function handleSubmit(e) {
     e.preventDefault();
     clearError();
 
-    // Validação de CPF/CNPJ
+    // Valida todos os campos antes de submeter
+    const emailValid = validateField("email", form.email);
+    const phoneValid = validateField("telefoneCelular", form.telefoneCelular);
+    const cpfValid = validateField("cpf", form.cpf);
+
+    // Verifica se há erros de validação
+    if (!emailValid || !phoneValid || !cpfValid) {
+      setError("Por favor, corrija os erros nos campos antes de enviar.");
+      return;
+    }
+
+    // Obter dados validados para envio
     const cpfCnpjValidation = validateCPForCNPJ(form.cpf);
-    if (!cpfCnpjValidation.valid) {
-      setError(cpfCnpjValidation.message);
-      return;
-    }
-
-    // Validação de email
-    const emailValidation = validateEmail(form.email);
-    if (!emailValidation.valid) {
-      setError(emailValidation.message);
-      return;
-    }
-
-    // Validação de telefone
     const phoneValidation = validatePhone(form.telefoneCelular);
-    if (!phoneValidation.valid) {
-      setError(phoneValidation.message);
-      return;
-    }
 
     try {
       // Prepara dados para o backend
@@ -75,6 +112,7 @@ const CadastroDoador = () => {
         complemento: "",
         pontoReferencia: ""
       });
+      setFieldErrors({});
 
       alert("Doador cadastrado com sucesso!");
       router.push("/sucesso?tipo=doadores");
@@ -98,15 +136,18 @@ const CadastroDoador = () => {
             </div>
             <div className={styles.formGroup}>
               <label htmlFor="email"><b>E-mail*</b></label>
-              <input id="email" name="email" type="email" value={form.email} onChange={handleChange} required placeholder="fulano@gmail.com" />
+              <input id="email" name="email" type="email" value={form.email} onChange={handleChange} onBlur={handleBlur} required placeholder="fulano@gmail.com" className={fieldErrors.email ? styles.inputError : ""} />
+              {fieldErrors.email && <span className={styles.fieldError}>{fieldErrors.email}</span>}
             </div>
             <div className={styles.formGroup}>
               <label htmlFor="telefoneCelular"><b>Telefone*</b></label>
-              <input id="telefoneCelular" name="telefoneCelular" value={form.telefoneCelular} onChange={handleChange} required placeholder="(45) 9 9988-7766" />
+              <input id="telefoneCelular" name="telefoneCelular" value={form.telefoneCelular} onChange={handleChange} onBlur={handleBlur} required placeholder="(45) 9 9988-7766" className={fieldErrors.telefoneCelular ? styles.inputError : ""} />
+              {fieldErrors.telefoneCelular && <span className={styles.fieldError}>{fieldErrors.telefoneCelular}</span>}
             </div>
             <div className={styles.formGroup}>
               <label htmlFor="cpf"><b>CPF*</b></label>
-              <input id="cpf" name="cpf" type="text" pattern="[0-9]*" maxLength={11} value={form.cpf} onChange={e => { const onlyNums = e.target.value.replace(/\D/g, ""); setForm({ ...form, cpf: onlyNums }); }} placeholder="11122233355" required />
+              <input id="cpf" name="cpf" type="text" pattern="[0-9]*" maxLength={14} value={form.cpf} onChange={e => { const onlyNums = e.target.value.replace(/\D/g, ""); setForm({ ...form, cpf: onlyNums }); if (fieldErrors.cpf !== undefined || onlyNums.length > 0) { validateField("cpf", onlyNums); } }} onBlur={handleBlur} placeholder="11122233355" required className={fieldErrors.cpf ? styles.inputError : ""} />
+              {fieldErrors.cpf && <span className={styles.fieldError}>{fieldErrors.cpf}</span>}
             </div>
             <hr className={styles.separador} />
             <div className={styles.formGroupFullWidth}>
