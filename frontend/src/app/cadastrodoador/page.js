@@ -7,6 +7,7 @@ import styles from "./cadastrodoador.module.css";
 import apiService from "../../services/api";
 import { mapDonorToBackend } from "../../services/dataMapper";
 import { useApi } from "../../hooks/useApi";
+import { validateCPForCNPJ, validateEmail, validatePhone } from "../../utils/validators";
 
 const CadastroDoador = () => {
   const [form, setForm] = useState({
@@ -30,25 +31,38 @@ const CadastroDoador = () => {
   async function handleSubmit(e) {
     e.preventDefault();
     clearError();
-    
-    // Limpa o CPF para garantir que só vai número
-    const cpfLimpo = form.cpf.replace(/\D/g, "");
-    
-    if (cpfLimpo.length > 0 && cpfLimpo.length !== 11) {
-      setError("CPF deve conter 11 dígitos numéricos.");
+
+    // Validação de CPF/CNPJ
+    const cpfCnpjValidation = validateCPForCNPJ(form.cpf);
+    if (!cpfCnpjValidation.valid) {
+      setError(cpfCnpjValidation.message);
       return;
     }
-    
+
+    // Validação de email
+    const emailValidation = validateEmail(form.email);
+    if (!emailValidation.valid) {
+      setError(emailValidation.message);
+      return;
+    }
+
+    // Validação de telefone
+    const phoneValidation = validatePhone(form.telefoneCelular);
+    if (!phoneValidation.valid) {
+      setError(phoneValidation.message);
+      return;
+    }
+
     try {
       // Prepara dados para o backend
       const donorData = mapDonorToBackend({
         ...form,
-        cpf: cpfLimpo
+        cpf: cpfCnpjValidation.cleaned
       });
 
       // Chama a API
       await execute(() => apiService.createDonor(donorData));
-      
+
       // Limpa o formulário
       setForm({
         nomeCompleto: "",
@@ -61,7 +75,7 @@ const CadastroDoador = () => {
         complemento: "",
         pontoReferencia: ""
       });
-      
+
       alert("Doador cadastrado com sucesso!");
       router.push("/sucesso?tipo=doadores");
     } catch (err) {
@@ -88,7 +102,7 @@ const CadastroDoador = () => {
             </div>
             <div className={styles.formGroup}>
               <label htmlFor="telefoneCelular"><b>Telefone*</b></label>
-              <input id="telefoneCelular" name="telefoneCelular" value={form.telefoneCelular} onChange={handleChange} required placeholder="(45) 9 9988-7766"/>
+              <input id="telefoneCelular" name="telefoneCelular" value={form.telefoneCelular} onChange={handleChange} required placeholder="(45) 9 9988-7766" />
             </div>
             <div className={styles.formGroup}>
               <label htmlFor="cpf"><b>CPF*</b></label>

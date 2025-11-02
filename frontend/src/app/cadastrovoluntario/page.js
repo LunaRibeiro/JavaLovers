@@ -4,6 +4,7 @@ import MenuBar from "../components/menubar/menubar";
 import Navegation from "../components/navegation/navegation";
 import { useRouter } from "next/navigation";
 import styles from "./cadastrovoluntario.module.css";
+import { validateCPF, validateEmail, validatePhone } from "../../utils/validators";
 
 const CadastroVoluntario = () => {
   const [form, setForm] = useState({
@@ -29,22 +30,38 @@ const CadastroVoluntario = () => {
     e.preventDefault();
     setLoading(true);
     setError("");
-    // Limpa o CPF para garantir que só vai número
-    const cpfLimpo = form.cpf.replace(/\D/g, "");
-    // Validação de telefone (aceita ambos formatos)
-    const telefoneLimpo = form.telefoneCelular.replace(/\D/g, "");
-    if (telefoneLimpo.length < 10 || telefoneLimpo.length > 11) {
-      setError("Telefone deve conter entre 10 e 11 dígitos (incluindo DDD).");
+
+    // Validação de CPF
+    const cpfValidation = validateCPF(form.cpf);
+    if (!cpfValidation.valid) {
+      setError(cpfValidation.message);
       setLoading(false);
       return;
     }
+
+    // Validação de email
+    const emailValidation = validateEmail(form.email);
+    if (!emailValidation.valid) {
+      setError(emailValidation.message);
+      setLoading(false);
+      return;
+    }
+
+    // Validação de telefone
+    const phoneValidation = validatePhone(form.telefoneCelular);
+    if (!phoneValidation.valid) {
+      setError(phoneValidation.message);
+      setLoading(false);
+      return;
+    }
+
     try {
       const novoVoluntario = {
         id: Date.now(),
         nomeCompleto: form.nomeCompleto,
-        telefoneCelular: form.telefoneCelular,
+        telefoneCelular: phoneValidation.cleaned,
         email: form.email,
-        cpf: cpfLimpo,
+        cpf: cpfValidation.cleaned,
         endereco: form.endereco,
         bairro: form.bairro,
         numero: form.numero,

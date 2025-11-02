@@ -11,6 +11,7 @@ import modalStyles from "./lista.module.css";
 import apiService from "../../../services/api";
 import { mapBeneficiaryFromBackend } from "../../../services/dataMapper";
 import { useApiList } from "../../../hooks/useApi";
+import { validateCPF, validateEmail, validatePhone } from "../../../utils/validators";
 
 export default function ListaBeneficiarios() {
   const router = useRouter();
@@ -18,7 +19,7 @@ export default function ListaBeneficiarios() {
   const [editForm, setEditForm] = useState(null); // objeto do beneficiário a editar
   const [editError, setEditError] = useState("");
   const [editLoading, setEditLoading] = useState(false);
-  
+
   const {
     data: beneficiarios,
     loading,
@@ -71,6 +72,7 @@ export default function ListaBeneficiarios() {
     e.preventDefault();
     setEditLoading(true);
     setEditError("");
+
     // Validação: pelo menos um dos campos (CPF/CRNM ou NIF) deve ser preenchido
     const cpfCrnmLimpo = editForm.cpfCrnm.replace(/\D/g, "");
     const nifLimpo = editForm.nif.replace(/\D/g, "");
@@ -79,20 +81,29 @@ export default function ListaBeneficiarios() {
       setEditLoading(false);
       return;
     }
-    if (cpfCrnmLimpo.length > 0 && cpfCrnmLimpo.length !== 11) {
-      setEditError("CPF/CRNM deve conter 11 dígitos numéricos.");
+
+    // Se CPF/CRNM foi preenchido, validar com dígito verificador
+    if (cpfCrnmLimpo.length > 0) {
+      const cpfValidation = validateCPF(editForm.cpfCrnm);
+      if (!cpfValidation.valid) {
+        setEditError(cpfValidation.message);
+        setEditLoading(false);
+        return;
+      }
+    }
+
+    // Validação de telefone
+    const phoneValidation = validatePhone(editForm.telefoneCelular);
+    if (!phoneValidation.valid) {
+      setEditError(phoneValidation.message);
       setEditLoading(false);
       return;
     }
-    // Validação de telefone (aceita ambos formatos)
-    const telefoneLimpo = editForm.telefoneCelular.replace(/\D/g, "");
-    if (telefoneLimpo.length < 10 || telefoneLimpo.length > 11) {
-      setEditError("Telefone deve conter entre 10 e 11 dígitos (incluindo DDD).");
-      setEditLoading(false);
-      return;
-    }
-    if (!/\S+@\S+\.\S+/.test(editForm.email)) {
-      setEditError("Por favor, insira um e-mail válido.");
+
+    // Validação de email
+    const emailValidation = validateEmail(editForm.email);
+    if (!emailValidation.valid) {
+      setEditError(emailValidation.message);
       setEditLoading(false);
       return;
     }
@@ -158,15 +169,15 @@ export default function ListaBeneficiarios() {
                       <td>{b.telefoneCelular}</td>
                       <td>{b.nif || '–'}</td>
                       <td className={styles.actionButtons}>
-                        <button 
-                          className={styles.editButton} 
+                        <button
+                          className={styles.editButton}
                           onClick={() => openEditModal(b)}
                           disabled={loading}
                         >
                           Editar
                         </button>
-                        <button 
-                          className={styles.deleteButton} 
+                        <button
+                          className={styles.deleteButton}
                           onClick={() => handleDelete(b.id)}
                           disabled={loading}
                         >
