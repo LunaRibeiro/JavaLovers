@@ -41,9 +41,7 @@ public class Beneficiary {
     @Column(name = "socioeconomic_data")
     private String socioeconomicData;
 
-    @Column(name = "registration_date")
-    private Date registrationDate;
-
+    @Convert(converter = BeneficiaryStatus.BeneficiaryStatusConverter.class)
     @Column(name = "beneficiary_status")
     private BeneficiaryStatus beneficiaryStatus;
 
