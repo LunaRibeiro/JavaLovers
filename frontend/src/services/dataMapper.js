@@ -24,9 +24,9 @@ export const mapDonorFromBackend = (backendDonor) => {
 
 export const mapItemToBackend = (frontendItem) => {
   return {
-    name: frontendItem.nome,
-    description: frontendItem.descricao || '',
-    quantity: frontendItem.quantidade || 0,
+    description: frontendItem.nome || frontendItem.descricao || '',
+    stockQuantity: frontendItem.quantidade || 0,
+    tagCode: frontendItem.tagCode || null,
     categoryId: frontendItem.categoriaId || null,
   };
 };
@@ -34,11 +34,13 @@ export const mapItemToBackend = (frontendItem) => {
 export const mapItemFromBackend = (backendItem) => {
   return {
     id: backendItem.itemId,
-    nome: backendItem.name,
+    nome: backendItem.description,
     descricao: backendItem.description,
-    quantidade: backendItem.quantity,
+    quantidade: backendItem.stockQuantity,
     categoria: backendItem.category?.name || '',
     categoriaId: backendItem.category?.categoryId || null,
+    tamanho: '', // Campo não disponível no backend
+    tagCode: backendItem.tagCode || null,
   };
 };
 

@@ -4,17 +4,13 @@ import MenuBar from "../../components/menubar/menubar";
 import Navigation from "../../components/navegation/navegation";
 import styles from "./lista.module.css";
 import { useRouter } from "next/navigation";
-import modalStyles from "./lista.module.css";
+import { FaPlus } from "react-icons/fa";
 
 export default function ListaVoluntarios() {
   const [voluntarios, setVoluntarios] = useState([]); // [{id, nomeCompleto, email, telefoneCelular, ...}]
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const router = useRouter();
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [editForm, setEditForm] = useState(null); // objeto do voluntário a editar
-  const [editError, setEditError] = useState("");
-  const [editLoading, setEditLoading] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -49,35 +45,6 @@ export default function ListaVoluntarios() {
     }
   };
 
-  const openEditModal = (voluntario) => {
-    setEditForm({ ...voluntario });
-    setEditModalOpen(true);
-    setEditError("");
-  };
-  const closeEditModal = () => {
-    setEditModalOpen(false);
-    setEditForm(null);
-    setEditError("");
-  };
-  const handleEditChange = (e) => {
-    setEditForm({ ...editForm, [e.target.name]: e.target.value });
-  };
-  const handleEditSubmit = (e) => {
-    e.preventDefault();
-    setEditLoading(true);
-    setEditError("");
-    try {
-      const novos = voluntarios.map((v) => v.id === editForm.id ? { ...editForm } : v);
-      setVoluntarios(novos);
-      localStorage.setItem('mockVoluntarios', JSON.stringify(novos));
-      setEditModalOpen(false);
-      setEditForm(null);
-    } catch (err) {
-      setEditError("Erro ao salvar edição");
-    } finally {
-      setEditLoading(false);
-    }
-  };
 
   return (
     <div className={styles.containerGeral}>
@@ -91,8 +58,9 @@ export default function ListaVoluntarios() {
             <button
               className={styles.addButton}
               onClick={() => router.push("/cadastrovoluntario")}
+              title="Adicionar Novo Voluntário"
             >
-              + Adicionar Voluntário
+              <FaPlus />
             </button>
           </div>
           <div className={styles.tableWrapper}>
@@ -129,7 +97,7 @@ export default function ListaVoluntarios() {
                       <td className={styles.actionButtons}>
                         <button
                           className={styles.editButton}
-                          onClick={() => openEditModal(v)}
+                          onClick={() => handleEdit(v.id)}
                           disabled={loading}
                         >
                           Editar
@@ -150,58 +118,6 @@ export default function ListaVoluntarios() {
           </div>
         </div>
       </div>
-      {/* Modal de edição */}
-      {editModalOpen && (
-        <div className={modalStyles.modalOverlay}>
-          <div className={modalStyles.modalContent}>
-            <h2 className={modalStyles.titulo}>Editar Voluntário</h2>
-            <form onSubmit={handleEditSubmit} className={modalStyles.formulario}>
-              <div className={modalStyles.formGroup}>
-                <label htmlFor="edit_nomeCompleto"><b>Nome completo*</b></label>
-                <input id="edit_nomeCompleto" name="nomeCompleto" value={editForm.nomeCompleto} onChange={handleEditChange} required placeholder="Fulano da Silva" />
-              </div>
-              <div className={modalStyles.formGroup}>
-                <label htmlFor="edit_email"><b>E-mail*</b></label>
-                <input id="edit_email" name="email" type="email" value={editForm.email} onChange={handleEditChange} required placeholder="fulano@gmail.com" />
-              </div>
-              <div className={modalStyles.formGroup}>
-                <label htmlFor="edit_telefoneCelular"><b>Telefone*</b></label>
-                <input id="edit_telefoneCelular" name="telefoneCelular" value={editForm.telefoneCelular} onChange={handleEditChange} required placeholder="(45) 9 9988-7766" type="tel" />
-              </div>
-              <div className={modalStyles.formGroup}>
-                <label htmlFor="edit_cpf"><b>CPF*</b></label>
-                <input id="edit_cpf" name="cpf" type="text" pattern="[0-9]*" maxLength={11} value={editForm.cpf} onChange={e => { const onlyNums = e.target.value.replace(/\D/g, ""); setEditForm({ ...editForm, cpf: onlyNums }); }} placeholder="11122233355" required />
-              </div>
-              <hr className={modalStyles.separador} />
-              <div className={modalStyles.formGroupFullWidth}>
-                <label htmlFor="edit_endereco"><b>Endereço*</b></label>
-                <input id="edit_endereco" name="endereco" value={editForm.endereco} onChange={handleEditChange} required placeholder="Rua da Água" />
-              </div>
-              <div className={modalStyles.formGroup}>
-                <label htmlFor="edit_numero"><b>Número*</b></label>
-                <input id="edit_numero" name="numero" type="number" value={editForm.numero} onChange={handleEditChange} required placeholder="2015" />
-              </div>
-              <div className={modalStyles.formGroup}>
-                <label htmlFor="edit_complemento"><b>Complemento</b></label>
-                <input id="edit_complemento" name="complemento" value={editForm.complemento} onChange={handleEditChange} placeholder="Ap 307" />
-              </div>
-              <div className={modalStyles.formGroupFullWidth}>
-                <label htmlFor="edit_bairro"><b>Bairro*</b></label>
-                <input id="edit_bairro" name="bairro" value={editForm.bairro} onChange={handleEditChange} required placeholder="Centro" />
-              </div>
-              <div className={modalStyles.formGroupFullWidth}>
-                <label htmlFor="edit_pontoReferencia"><b>Ponto de referência</b></label>
-                <input id="edit_pontoReferencia" name="pontoReferencia" value={editForm.pontoReferencia} onChange={handleEditChange} placeholder="Em frente ao parque" />
-              </div>
-              <div className={modalStyles.modalButtonGroup}>
-                <button type="button" onClick={closeEditModal} style={{ background: '#aaa', color: '#fff' }}>Cancelar</button>
-                <button type="submit" disabled={editLoading}>{editLoading ? "Salvando..." : "Salvar Alterações"}</button>
-              </div>
-              {editError && <div className={modalStyles.errorMessage}>{editError}</div>}
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 } 

@@ -1,140 +1,263 @@
-.container {
+/* Container Geral da Página - Reutiliza do CSS do formulário, mas adapta se necessário */
+.containerGeral {
   min-height: 100vh;
-  background: var(--color-bg);
-  margin-left: 220px; /* largura do Navigation */
-}
-
-.main {
-  padding-top: 48px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  min-height: 80vh;
+  padding-bottom: 40px;
 }
 
-.titulo {
-  font-size: 2.2rem;
-  font-weight: 800;
-  margin-bottom: 24px;
-  color: var(--color-primary);
-  letter-spacing: 1px;
-  text-align: center;
-}
-
-.tabela {
+/* Wrapper para o conteúdo da lista (centraliza e controla a largura máxima) */
+.contentWrapper {
+  flex-grow: 1;
   width: 100%;
-  max-width: 1100px;
-  margin: 12px auto 0 auto;
-  border-collapse: separate;
-  border-spacing: 0 10px;
-  background: var(--color-bg-alt);
-  border-radius: 16px;
-  box-shadow: 0 2px 12px rgba(25, 118, 210, 0.07);
-  overflow: hidden;
-}
-
-.tabela th,
-.tabela td {
-  padding: 14px 18px;
-  text-align: center;
-  color: var(--color-text-light);
-  font-size: 1.05rem;
-}
-
-.tabela th {
-  background: var(--color-primary);
-  color: #fff;
-  font-weight: 700;
-  text-transform: uppercase;
-  font-size: 1rem;
-  letter-spacing: 0.5px;
-  border: none;
-}
-
-.tabela tbody tr {
-  background: var(--color-bg-alt);
-  transition: background 0.2s;
-  border-radius: 12px;
-}
-.tabela tbody tr:nth-child(even) {
-  background: #f5f6fa;
-}
-.tabela tbody tr:hover {
-  background: #e9eafd;
-}
-
-.tabela td {
-  border-top: none;
-  border-bottom: 1.5px solid var(--color-border-light);
-}
-.tabela tr:last-child td {
-  border-bottom: none;
-}
-
-.btn {
-  padding: 12px 28px;
-  border: none;
-  border-radius: 8px;
-  font-size: 1.08rem;
-  font-weight: 700;
-  cursor: pointer;
-  margin: 8px;
-  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
-  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.08);
-}
-
-.btnAdicionar {
-  background: var(--color-primary);
-  color: #fff;
-}
-.btnAdicionar:hover {
-  background: var(--color-primary-dark);
-}
-
-.btnEditar {
-  background: #e9eafd;
-  color: var(--color-primary);
-  border: 1.5px solid var(--color-primary);
-}
-.btnEditar:hover {
-  background: #d0d8f6;
-}
-
-.btnExcluir {
-  background: #fff0f0;
-  color: var(--color-error);
-  border: 1.5px solid var(--color-error);
-}
-.btnExcluir:hover {
-  background: #ffd6d6;
-}
-
-.botoesInferiores {
+  max-width: 1200px;
+  padding: 20px;
   display: flex;
-  justify-content: flex-end;
-  width: 100%;
-  margin-top: 12px;
+  justify-content: center;
+  align-items: flex-start;
 }
 
-.modalOverlay {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.3);
+/* Contêiner da Lista em si */
+.listContainer {
+  background: var(--color-bg-alt);
+  border-radius: 18px;
+  box-shadow: 0 4px 30px 0 rgba(0, 0, 0, 0.08);
+  padding: 40px 60px;
+  width: 100%;
+  border: 1px solid var(--color-border-light);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Título da Página */
+.titulo {
+  text-align: center;
+  font-size: 2.5rem;
+  color: var(--color-text);
+  margin-bottom: 12px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  position: relative;
+  padding-bottom: 10px;
+}
+
+.decoracao {
+  width: 80px;
+  height: 6px;
+  background: var(--color-primary);
+  margin: 0 auto 30px auto;
+  border-radius: 3px;
+}
+
+/* Header com botões de ação */
+.actionsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.addButton {
+  background: var(--color-primary);
+  color: #fff;
+  padding: 12px;
+  font-size: 1.2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px 0 rgba(25, 118, 210, 0.2);
+  transition: background 0.2s ease, transform 0.2s ease;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
+  border: none;
+  cursor: pointer;
 }
 
-.modal {
+.addButton:hover {
+  background: var(--color-primary-dark);
+  transform: translateY(-1px);
+}
+
+/* Estilos para Tabela */
+.tableWrapper {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.beneficiariosTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 10px;
+}
+
+.beneficiariosTable th,
+.beneficiariosTable td {
+  text-align: left;
+  padding: 15px 20px;
+  font-size: 0.95rem;
+}
+
+.beneficiariosTable th {
+  background-color: var(--color-primary);
+  color: #fff;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  letter-spacing: 0.5px;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.beneficiariosTable th:first-child {
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+}
+
+.beneficiariosTable th:last-child {
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+.beneficiariosTable tbody tr {
+  background-color: var(--color-bg-alt);
+  transition: background-color 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+}
+
+.beneficiariosTable tbody tr:hover {
+  background-color: #f0f4f8;
+}
+
+.beneficiariosTable td {
+  color: var(--color-text-light);
+  border-top: none;
+  vertical-align: middle;
+}
+
+.beneficiariosTable tbody tr td:first-child {
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+}
+
+.beneficiariosTable tbody tr td:last-child {
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+/* Botões de Ação dentro da Tabela */
+.actionButtons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.editButton, .deleteButton, .approveButton, .rejectButton {
+  padding: 8px 15px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 6px;
+  transition: background 0.2s ease, transform 0.2s ease;
+  box-shadow: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.editButton {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.editButton:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+  transform: translateY(-1px);
+}
+
+.deleteButton {
+  background: var(--color-error);
+  color: #fff;
+}
+
+.deleteButton:hover:not(:disabled) {
+  background: var(--color-error);
+  filter: brightness(0.9);
+  transform: translateY(-1px);
+}
+
+.editButton:disabled, .deleteButton:disabled, .addButton:disabled, .approveButton:disabled, .rejectButton:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Mensagens de estado */
+.loadingMessage, .errorMessage, .noDataMessage {
+  text-align: center;
+  padding: 20px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text-light);
+  background-color: var(--color-bg-alt);
+  border-radius: 8px;
+  margin-top: 20px;
+  border: 1px solid var(--color-border-light);
+  width: 100%;
+}
+
+.errorMessage {
+  color: var(--color-error);
+  background-color: rgba(192, 57, 43, 0.1);
+  border-color: var(--color-error);
+}
+
+.loadingMessage {
+  color: var(--color-primary);
+  background-color: rgba(25, 118, 210, 0.05);
+  border-color: rgba(25, 118, 210, 0.2);
+}
+
+.noDataMessage {
+  border-color: var(--color-border);
+}
+
+/* Modal */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modalContent {
   background: var(--color-bg-alt);
-  padding: 32px 24px;
   border-radius: 18px;
-  box-shadow: 0 2px 16px rgba(25,118,210,0.10);
-  min-width: 320px;
-  max-width: 95vw;
+  box-shadow: 0 8px 32px 0 rgba(25, 118, 210, 0.18);
+  padding: 40px 60px;
+  max-width: 600px;
+  width: 96vw;
   border: 1.5px solid var(--color-border-light);
+  display: flex;
+  flex-direction: column;
+  position: relative;
 }
 
 .formulario {
@@ -143,13 +266,22 @@
   gap: 16px;
 }
 
-.formLabel {
+.formGroup {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.formGroup label {
   font-weight: 600;
-  color: var(--color-primary);
-  margin-bottom: 4px;
+  color: var(--color-text);
+  margin-bottom: 8px;
+  font-size: 0.98rem;
 }
 
 .formInput {
+  width: 100%;
   padding: 12px 14px;
   border: 1.5px solid var(--color-border-light);
   border-radius: 8px;
@@ -158,22 +290,134 @@
   color: #222;
   transition: border 0.2s;
 }
+
 .formInput:focus {
+  outline: none;
   border: 1.5px solid var(--color-primary);
 }
 
-.modalBotoes {
+.modalButtonGroup {
   display: flex;
-  justify-content: flex-end;
-  gap: 16px;
-  margin-top: 16px;
+  gap: 18px;
+  justify-content: center;
+  width: 100%;
+  margin-top: 24px;
 }
 
-.actionsHeader {
-  width: 100%;
-  max-width: 1100px;
-  margin: 0 auto 8px auto;
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-} 
+.submitButton, .cancelButton {
+  padding: 12px 28px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.08rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+  min-width: 150px;
+}
+
+.submitButton {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.submitButton:hover {
+  background: var(--color-primary-dark);
+  transform: translateY(-1px);
+}
+
+.cancelButton {
+  background: #aaa;
+  color: #fff;
+}
+
+.cancelButton:hover {
+  background: #888;
+  transform: translateY(-1px);
+}
+
+/* Responsividade para telas menores */
+@media (max-width: 768px) {
+  .listContainer {
+    padding: 20px;
+  }
+  .titulo {
+    font-size: 2rem;
+  }
+  .actionsHeader {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .addButton {
+    width: 100%;
+  }
+  .modalContent {
+    padding: 30px 20px;
+  }
+  .beneficiariosTable {
+    border-spacing: 0;
+  }
+  .beneficiariosTable thead {
+    display: none;
+  }
+  .beneficiariosTable, .beneficiariosTable tbody, .beneficiariosTable tr, .beneficiariosTable td {
+    display: block;
+    width: 100%;
+  }
+  .beneficiariosTable tr {
+    margin-bottom: 15px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    padding: 15px;
+    background-color: var(--color-bg-alt);
+  }
+  .beneficiariosTable td {
+    text-align: right;
+    padding: 8px 10px;
+    border: none;
+    position: relative;
+    padding-left: 50%;
+    min-height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+  .beneficiariosTable td::before {
+    content: attr(data-label);
+    position: absolute;
+    left: 10px;
+    width: calc(50% - 20px);
+    text-align: left;
+    font-weight: 700;
+    color: var(--color-text);
+  }
+  .beneficiariosTable td:nth-of-type(1)::before { content: "ID:"; }
+  .beneficiariosTable td:nth-of-type(2)::before { content: "Nome:"; }
+  .beneficiariosTable td:nth-of-type(3)::before { content: "Categoria:"; }
+  .beneficiariosTable td:nth-of-type(4)::before { content: "Tamanho:"; }
+  .beneficiariosTable td:nth-of-type(5)::before { content: "Quantidade:"; }
+  .beneficiariosTable td:nth-of-type(6)::before { content: "Ações:"; }
+
+  .actionButtons {
+    justify-content: flex-end;
+    margin-top: 10px;
+    width: 100%;
+  }
+  .editButton, .deleteButton {
+    flex-grow: 1;
+    padding: 10px 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .listContainer {
+    padding: 15px;
+  }
+  .titulo {
+    font-size: 1.8rem;
+  }
+  .modalContent {
+    padding: 20px 15px;
+  }
+}
