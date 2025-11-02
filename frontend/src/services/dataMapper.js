@@ -3,7 +3,7 @@ export const mapDonorToBackend = (frontendDonor) => {
   return {
     name: frontendDonor.nomeCompleto,
     cpfCnpj: frontendDonor.cpf,
-    contact: frontendDonor.telefoneCelular || frontendDonor.email,
+    contact: frontendDonor.email, // Contact deve ser email conforme validação do backend
   };
 };
 
@@ -65,10 +65,13 @@ export const mapUserFromBackend = (backendUser) => {
 
 // Mapeador para Beneficiários (quando o controller for criado)
 export const mapBeneficiaryToBackend = (frontendBeneficiary) => {
+  // CPF pode ser vazio se NIF foi preenchido, mas não pode ser ambos vazios (validação já feita no frontend)
+  const cpfValue = frontendBeneficiary.cpfCrnm || (frontendBeneficiary.nif ? "" : null);
+
   return {
     fullName: frontendBeneficiary.nomeCompleto,
-    cpf: frontendBeneficiary.cpfCrnm || frontendBeneficiary.nif,
-    phone: frontendBeneficiary.telefoneCelular,
+    cpf: cpfValue || "", // Se não tem CPF mas tem NIF, envia string vazia
+    phone: frontendBeneficiary.telefoneCelular, // Já vem limpo (apenas números) do frontend
     socioeconomicData: JSON.stringify({
       endereco: frontendBeneficiary.endereco,
       bairro: frontendBeneficiary.bairro,

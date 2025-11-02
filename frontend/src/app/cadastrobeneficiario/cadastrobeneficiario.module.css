@@ -135,6 +135,20 @@
   font-weight: 500;
 }
 
+/* Estilo para input com erro */
+.inputError {
+  border-color: var(--color-error) !important;
+  border-width: 2px !important;
+}
+
+/* Mensagem de erro por campo */
+.fieldError {
+  color: var(--color-error);
+  font-size: 0.85rem;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
 /* Responsividade para telas menores */
 @media (max-width: 768px) {
   .formContainer {

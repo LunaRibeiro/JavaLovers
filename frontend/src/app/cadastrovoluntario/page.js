@@ -5,6 +5,7 @@ import Navegation from "../components/navegation/navegation";
 import { useRouter } from "next/navigation";
 import styles from "./cadastrovoluntario.module.css";
 import { useNotification } from "../../components/notifications/NotificationProvider";
+import { validateCPF, validateEmail, validatePhone } from "../../utils/validators";
 
 const CadastroVoluntario = () => {
   const [form, setForm] = useState({
@@ -18,35 +19,86 @@ const CadastroVoluntario = () => {
     complemento: "",
     pontoReferencia: ""
   });
+  const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
   const { showNotification } = useNotification();
 
+  const validateField = (name, value) => {
+    let validation = { valid: true, message: "" };
+
+    switch (name) {
+      case "email":
+        validation = validateEmail(value);
+        break;
+      case "telefoneCelular":
+        validation = validatePhone(value);
+        break;
+      case "cpf":
+        if (value) {
+          validation = validateCPF(value);
+        }
+        break;
+      default:
+        validation = { valid: true };
+    }
+
+    setFieldErrors(prev => ({
+      ...prev,
+      [name]: validation.valid ? "" : validation.message
+    }));
+
+    return validation.valid;
+  };
+
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: value });
+    
+    // Validação em tempo real para campos críticos (email, telefone, CPF) assim que começam a digitar
+    if (name === "email" || name === "telefoneCelular" || name === "cpf") {
+      if (value.length > 0 || fieldErrors[name] !== undefined) {
+        validateField(name, value);
+      }
+    } else if (fieldErrors[name] !== undefined || value.length > 0) {
+      validateField(name, value);
+    }
+  };
+
+  const handleBlur = (e) => {
+    // Valida quando o usuário sai do campo
+    validateField(e.target.name, e.target.value);
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
-    // Limpa o CPF para garantir que só vai número
-    const cpfLimpo = form.cpf.replace(/\D/g, "");
-    // Validação de telefone (aceita ambos formatos)
-    const telefoneLimpo = form.telefoneCelular.replace(/\D/g, "");
-    if (telefoneLimpo.length < 10 || telefoneLimpo.length > 11) {
-      setError("Telefone deve conter entre 10 e 11 dígitos (incluindo DDD).");
+
+    // Valida todos os campos antes de submeter
+    const emailValid = validateField("email", form.email);
+    const phoneValid = validateField("telefoneCelular", form.telefoneCelular);
+    const cpfValid = validateField("cpf", form.cpf);
+
+    // Verifica se há erros de validação
+    if (!emailValid || !phoneValid || !cpfValid) {
+      setError("Por favor, corrija os erros nos campos antes de enviar.");
       setLoading(false);
       return;
     }
+
+    // Obter dados validados para envio
+    const cpfValidation = validateCPF(form.cpf);
+    const phoneValidation = validatePhone(form.telefoneCelular);
+
     try {
       const novoVoluntario = {
         id: Date.now(),
         nomeCompleto: form.nomeCompleto,
-        telefoneCelular: form.telefoneCelular,
+        telefoneCelular: phoneValidation.cleaned,
         email: form.email,
-        cpf: cpfLimpo,
+        cpf: cpfValidation.cleaned,
         endereco: form.endereco,
         bairro: form.bairro,
         numero: form.numero,
@@ -92,15 +144,18 @@ const CadastroVoluntario = () => {
             </div>
             <div className={styles.formGroup}>
               <label htmlFor="email"><b>E-mail*</b></label>
-              <input id="email" name="email" type="email" value={form.email} onChange={handleChange} required placeholder="fulano@gmail.com" />
+              <input id="email" name="email" type="email" value={form.email} onChange={handleChange} onBlur={handleBlur} required placeholder="fulano@gmail.com" className={fieldErrors.email ? styles.inputError : ""} />
+              {fieldErrors.email && <span className={styles.fieldError}>{fieldErrors.email}</span>}
             </div>
             <div className={styles.formGroup}>
               <label htmlFor="telefoneCelular"><b>Telefone*</b></label>
-              <input id="telefoneCelular" name="telefoneCelular" value={form.telefoneCelular} onChange={handleChange} required placeholder="(45) 9 9988-7766" type="tel" />
+              <input id="telefoneCelular" name="telefoneCelular" value={form.telefoneCelular} onChange={handleChange} onBlur={handleBlur} required placeholder="(45) 9 9988-7766" type="tel" className={fieldErrors.telefoneCelular ? styles.inputError : ""} />
+              {fieldErrors.telefoneCelular && <span className={styles.fieldError}>{fieldErrors.telefoneCelular}</span>}
             </div>
             <div className={styles.formGroup}>
               <label htmlFor="cpf"><b>CPF*</b></label>
-              <input id="cpf" name="cpf" type="text" pattern="[0-9]*" maxLength={11} value={form.cpf} onChange={e => { const onlyNums = e.target.value.replace(/\D/g, ""); setForm({ ...form, cpf: onlyNums }); }} placeholder="11122233355" required />
+              <input id="cpf" name="cpf" type="text" pattern="[0-9]*" maxLength={11} value={form.cpf} onChange={e => { const onlyNums = e.target.value.replace(/\D/g, ""); setForm({ ...form, cpf: onlyNums }); if (fieldErrors.cpf !== undefined || onlyNums.length > 0) { validateField("cpf", onlyNums); } }} onBlur={handleBlur} placeholder="11122233355" required className={fieldErrors.cpf ? styles.inputError : ""} />
+              {fieldErrors.cpf && <span className={styles.fieldError}>{fieldErrors.cpf}</span>}
             </div>
             <hr className={styles.separador} />
             <div className={styles.formGroupFullWidth}>
