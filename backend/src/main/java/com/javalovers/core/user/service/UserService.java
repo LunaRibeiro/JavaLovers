@@ -1,5 +1,6 @@
 package com.javalovers.core.user.service;
 
+import com.javalovers.common.exception.EntityNotFoundException;
 import com.javalovers.core.user.domain.dto.request.UserFormDTO;
 import com.javalovers.core.user.domain.dto.response.UserDTO;
 import com.javalovers.core.user.domain.entity.User;
@@ -61,6 +62,12 @@ public class UserService {
 
     public List<UserDTO> generateUserDTOList(List<User> userList) {
         return userList.stream().map(userDTOMapper::convert).toList();
+    }
+
+    public User getOrThrowException(Long id) {
+        return userRepository.findById(id).orElseThrow(
+                () -> new EntityNotFoundException("User", id)
+        );
     }
 
 }

@@ -1,5 +1,6 @@
 package com.javalovers.core.donor.service;
 
+import com.javalovers.common.exception.EntityNotFoundException;
 import com.javalovers.common.specification.SearchCriteria;
 import com.javalovers.common.specification.SpecificationHelper;
 import com.javalovers.core.donor.domain.dto.request.DonorFilterDTO;
@@ -82,6 +83,12 @@ public class DonorService {
 
     public List<DonorDTO> generateDonorList(List<Donor> itemList) {
         return itemList.stream().map(donorDTOMapper::convert).toList();
+    }
+
+    public Donor getOrThrowException(Long id) {
+        return donorRepository.findById(id).orElseThrow(
+                () -> new EntityNotFoundException("Donor", id)
+        );
     }
 
 }

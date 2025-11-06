@@ -1,5 +1,6 @@
 package com.javalovers.core.donation.service;
 
+import com.javalovers.common.exception.EntityNotFoundException;
 import com.javalovers.core.donation.domain.dto.request.DonationFormDTO;
 import com.javalovers.core.donation.domain.dto.response.DonationDTO;
 import com.javalovers.core.donation.domain.entity.Donation;
@@ -25,7 +26,6 @@ public class DonationService {
 
     @Transactional
     public DonationDTO create(DonationFormDTO formDTO, Donor donor, User user) {
-
         Donation donation = donationCreateMapper.convert(formDTO, donor, user);
         Donation donationSalva = donationRepository.save(donation);
 
@@ -45,5 +45,11 @@ public class DonationService {
                 .stream()
                 .map(donationDTOMapper::convert)
                 .collect(Collectors.toList());
+    }
+
+    public Donation getOrThrowException(Long id) {
+        return donationRepository.findById(id).orElseThrow(
+                () -> new EntityNotFoundException("Donation", id)
+        );
     }
 }
