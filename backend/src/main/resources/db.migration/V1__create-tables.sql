@@ -92,21 +92,25 @@ create table withdrawal (
 );
 
 create table item_donated (
+    item_donated_id                 bigserial not null,
     donation_id                     bigint not null,
     item_id                         bigint not null,
     quantity                        int not null check (quantity > 0),
-    primary key (donation_id, item_id),
+    primary key (item_donated_id),
 
     constraint fk_item_donated_donation foreign key (donation_id) references donation(donation_id),
-    constraint fk_item_donated_item foreign key (item_id) references item(item_id)
+    constraint fk_item_donated_item foreign key (item_id) references item(item_id),
+    constraint uk_item_donated unique (donation_id, item_id)
 );
 
 create table item_withdrawn (
+    item_withdrawn_id               bigserial not null,
     withdrawal_id                   bigint not null,
     item_id                         bigint not null,
     quantity                        int not null check (quantity > 0),
-    primary key (withdrawal_id, item_id),
+    primary key (item_withdrawn_id),
 
     constraint fk_item_withdrawn_withdrawal foreign key (withdrawal_id) references withdrawal(withdrawal_id),
-    constraint fk_item_withdrawn_item foreign key (item_id) references item(item_id)
+    constraint fk_item_withdrawn_item foreign key (item_id) references item(item_id),
+    constraint uk_item_withdrawn unique (withdrawal_id, item_id)
 );
