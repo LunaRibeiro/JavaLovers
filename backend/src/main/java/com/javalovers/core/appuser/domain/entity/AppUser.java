@@ -1,4 +1,4 @@
-package com.javalovers.core.user.domain.entity;
+package com.javalovers.core.appuser.domain.entity;
 
 import com.javalovers.core.profile.domain.entity.Profile;
 import com.javalovers.core.status.Status;
@@ -15,7 +15,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class User {
+public class AppUser {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

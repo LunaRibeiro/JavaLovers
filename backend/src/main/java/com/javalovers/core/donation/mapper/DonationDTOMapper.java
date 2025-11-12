@@ -3,7 +3,7 @@ package com.javalovers.core.donation.mapper;
 import com.javalovers.core.donation.domain.dto.response.DonationDTO;
 import com.javalovers.core.donation.domain.entity.Donation;
 import com.javalovers.core.donor.mapper.DonorDTOMapper;
-import com.javalovers.core.user.mapper.UserDTOMapper;
+import com.javalovers.core.appuser.mapper.AppUserDTOMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 public class DonationDTOMapper {
 
     private final DonorDTOMapper donorDTOMapper;
-    private final UserDTOMapper userDTOMapper;
+    private final AppUserDTOMapper appUserDTOMapper;
     //itemDonatedMapper
 
     public DonationDTO convert(Donation donation) {
@@ -21,7 +21,7 @@ public class DonationDTOMapper {
         return new DonationDTO(
                 donation.getDonationId(),
                 donation.getDonationDate(),
-                userDTOMapper.convert(donation.getReceiverUser()),
+                appUserDTOMapper.convert(donation.getReceiverUser()),
                 donorDTOMapper.convert(donation.getDonor())
         );
     }

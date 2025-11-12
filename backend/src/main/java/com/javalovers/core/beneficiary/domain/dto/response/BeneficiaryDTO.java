@@ -1,7 +1,7 @@
 package com.javalovers.core.beneficiary.domain.dto.response;
 
 import com.javalovers.core.beneficiarystatus.BeneficiaryStatus;
-import com.javalovers.core.user.domain.dto.response.UserDTO;
+import com.javalovers.core.appuser.domain.dto.response.AppUserDTO;
 
 public record BeneficiaryDTO (
         Long beneficiaryId,
@@ -10,6 +10,6 @@ public record BeneficiaryDTO (
         String phone,
         String socioeconomicData,
         BeneficiaryStatus beneficiaryStatus,
-        UserDTO approverId
+        AppUserDTO approverId
 ){
 }

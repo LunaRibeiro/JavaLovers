@@ -1,4 +1,4 @@
-package com.javalovers.core.user.domain.dto.response;
+package com.javalovers.core.appuser.domain.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

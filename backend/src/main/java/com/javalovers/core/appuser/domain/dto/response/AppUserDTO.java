@@ -1,9 +1,9 @@
-package com.javalovers.core.user.domain.dto.response;
+package com.javalovers.core.appuser.domain.dto.response;
 
 import com.javalovers.core.profile.domain.entity.Profile;
 import com.javalovers.core.status.Status;
 
-public record UserDTO(
+public record AppUserDTO(
                 Long userId,
                 String name,
                 String login,

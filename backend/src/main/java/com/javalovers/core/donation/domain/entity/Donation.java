@@ -1,7 +1,7 @@
 package com.javalovers.core.donation.domain.entity;
 
 import com.javalovers.core.donor.domain.entity.Donor;
-import com.javalovers.core.user.domain.entity.User;
+import com.javalovers.core.appuser.domain.entity.AppUser;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -28,7 +28,7 @@ public class Donation {
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "receiver_user_id", nullable = false)
-    private User receiverUser;
+    private AppUser receiverUser;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "donor_id")

@@ -1,15 +1,13 @@
 package com.javalovers.core.beneficiary.domain.entity;
 
 import com.javalovers.core.beneficiarystatus.BeneficiaryStatus;
-import com.javalovers.core.user.domain.entity.User;
+import com.javalovers.core.appuser.domain.entity.AppUser;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.util.Date;
 
 @Entity
 @Table(name = "beneficiary")
@@ -47,6 +45,6 @@ public class Beneficiary {
 
     @ManyToOne
     @JoinColumn(name = "approver_user_id")
-    private User approverId;
+    private AppUser approverId;
 
 }

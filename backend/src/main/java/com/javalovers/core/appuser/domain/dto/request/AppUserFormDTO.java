@@ -1,4 +1,4 @@
-package com.javalovers.core.user.domain.dto.request;
+package com.javalovers.core.appuser.domain.dto.request;
 
 import com.javalovers.core.profile.domain.entity.Profile;
 import com.javalovers.core.status.Status;
@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-public record UserFormDTO(
+public record AppUserFormDTO(
                 @NotBlank(message = "Nome é obrigatório")
                 @Size(min = 3, max = 255, message = "Nome deve ter entre 3 e 255 caracteres")
                 String name,

@@ -4,8 +4,8 @@ import com.javalovers.core.donation.domain.dto.request.DonationFormDTO;
 import com.javalovers.core.donation.domain.entity.Donation;
 import com.javalovers.core.donor.domain.entity.Donor;
 import com.javalovers.core.donor.repository.DonorRepository;
-import com.javalovers.core.user.domain.entity.User;
-import com.javalovers.core.user.repository.UserRepository;
+import com.javalovers.core.appuser.domain.entity.AppUser;
+import com.javalovers.core.appuser.repository.AppUserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,9 +15,9 @@ public class DonationCreateMapper {
 
     //itemDonorRepository
     private final DonorRepository donorRepository;
-    private final UserRepository userRepository;
+    private final AppUserRepository appUserRepository;
 
-    public Donation convert(DonationFormDTO donationFormDTO, Donor donor, User user) {
+    public Donation convert(DonationFormDTO donationFormDTO, Donor donor, AppUser user) {
 
         Donation donation = new Donation();
         donation.setDonationDate(donationFormDTO.donationDate());

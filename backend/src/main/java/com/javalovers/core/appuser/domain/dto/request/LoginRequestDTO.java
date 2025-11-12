@@ -1,4 +1,4 @@
-package com.javalovers.core.user.domain.dto.request;
+package com.javalovers.core.appuser.domain.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;

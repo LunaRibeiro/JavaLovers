@@ -2,7 +2,7 @@ package com.javalovers.core.beneficiary.mapper;
 
 import com.javalovers.core.beneficiary.domain.dto.response.BeneficiaryDTO;
 import com.javalovers.core.beneficiary.domain.entity.Beneficiary;
-import com.javalovers.core.user.mapper.UserDTOMapper;
+import com.javalovers.core.appuser.mapper.AppUserDTOMapper;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 @AllArgsConstructor
 public class BeneficiaryDTOMapper {
 
-    private final UserDTOMapper userDTOMapper;
+    private final AppUserDTOMapper appUserDTOMapper;
 
     public BeneficiaryDTO convert(Beneficiary beneficiary){
         if(beneficiary == null) return null;
@@ -21,7 +21,7 @@ public class BeneficiaryDTOMapper {
                 beneficiary.getPhone(),
                 beneficiary.getSocioeconomicData(),
                 beneficiary.getBeneficiaryStatus(),
-                userDTOMapper.convert(beneficiary.getApproverId())
+                appUserDTOMapper.convert(beneficiary.getApproverId())
         );
     }
 }

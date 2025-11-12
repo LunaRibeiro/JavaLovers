@@ -1,4 +1,4 @@
-package com.javalovers.core.user.service;
+package com.javalovers.core.appuser.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

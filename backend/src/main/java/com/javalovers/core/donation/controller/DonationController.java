@@ -5,8 +5,8 @@ import com.javalovers.core.donation.domain.dto.response.DonationDTO;
 import com.javalovers.core.donation.service.DonationService;
 import com.javalovers.core.donor.domain.entity.Donor;
 import com.javalovers.core.donor.service.DonorService;
-import com.javalovers.core.user.domain.entity.User;
-import com.javalovers.core.user.service.UserService;
+import com.javalovers.core.appuser.domain.entity.AppUser;
+import com.javalovers.core.appuser.service.AppUserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,12 +22,12 @@ public class DonationController {
 
     private final DonationService donationService;
     private final DonorService donorService;
-    private final UserService userService;
+    private final AppUserService userService;
 
     @PostMapping
     public ResponseEntity<DonationDTO> create(@Valid @RequestBody DonationFormDTO formDTO) {
         Donor donor = donorService.getOrThrowException(formDTO.donorId());
-        User user = userService.getOrThrowException(formDTO.receiverUserId());
+        AppUser user = userService.getOrThrowException(formDTO.receiverUserId());
 
         DonationDTO donationCriada = donationService.create(formDTO, donor, user);
 

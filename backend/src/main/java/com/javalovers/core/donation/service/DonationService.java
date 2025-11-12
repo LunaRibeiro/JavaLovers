@@ -8,7 +8,7 @@ import com.javalovers.core.donation.mapper.DonationCreateMapper;
 import com.javalovers.core.donation.mapper.DonationDTOMapper;
 import com.javalovers.core.donation.repository.DonationRepository;
 import com.javalovers.core.donor.domain.entity.Donor;
-import com.javalovers.core.user.domain.entity.User;
+import com.javalovers.core.appuser.domain.entity.AppUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,7 +25,7 @@ public class DonationService {
     private final DonationDTOMapper donationDTOMapper;
 
     @Transactional
-    public DonationDTO create(DonationFormDTO formDTO, Donor donor, User user) {
+    public DonationDTO create(DonationFormDTO formDTO, Donor donor, AppUser user) {
         Donation donation = donationCreateMapper.convert(formDTO, donor, user);
         Donation donationSalva = donationRepository.save(donation);
 

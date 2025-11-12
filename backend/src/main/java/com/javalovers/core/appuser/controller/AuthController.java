@@ -1,8 +1,8 @@
-package com.javalovers.core.user.controller;
+package com.javalovers.core.appuser.controller;
 
-import com.javalovers.core.user.domain.dto.request.LoginRequestDTO;
-import com.javalovers.core.user.domain.dto.response.LoginResponseDTO;
-import com.javalovers.core.user.service.AuthService;
+import com.javalovers.core.appuser.domain.dto.request.LoginRequestDTO;
+import com.javalovers.core.appuser.domain.dto.response.LoginResponseDTO;
+import com.javalovers.core.appuser.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
