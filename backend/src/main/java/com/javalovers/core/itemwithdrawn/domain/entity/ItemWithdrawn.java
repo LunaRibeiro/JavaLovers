@@ -19,7 +19,7 @@ public class ItemWithdrawn {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "item_withdrawn_id")
-    private Integer itemWithdrawnId;
+    private Long itemWithdrawnId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "withdrawal_id", nullable = false)
