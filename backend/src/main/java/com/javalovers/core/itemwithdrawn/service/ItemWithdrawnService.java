@@ -1,4 +1,4 @@
-package com.javalovers.core.itemwithdrawn;
+package com.javalovers.core.itemwithdrawn.service;
 
 import com.javalovers.common.exception.EntityNotFoundException;
 import com.javalovers.core.item.domain.entity.Item;
