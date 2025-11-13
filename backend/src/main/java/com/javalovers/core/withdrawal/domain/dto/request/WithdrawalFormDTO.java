@@ -5,6 +5,6 @@ import java.util.Date;
 public record WithdrawalFormDTO(
         Date withdrawalDate,
         Long beneficiaryId,
-        Long attendantUser
+        Long attendantUserId
 ) {
 }

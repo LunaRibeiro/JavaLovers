@@ -67,7 +67,7 @@ public class WithdrawalService {
 
     private Specification<Withdrawal> generateSpecification(WithdrawalFilterDTO withdrawalFilterDTO) {
         SearchCriteria<Long> beneficiaryCriteria = SpecificationHelper.generateEqualsCriteria("beneficiary.id", withdrawalFilterDTO.beneficiaryId());
-        SearchCriteria<Long> attendantUserCriteria = SpecificationHelper.generateEqualsCriteria("attendantUser.id", withdrawalFilterDTO.attendantUserId());
+        SearchCriteria<Long> attendantUserCriteria = SpecificationHelper.generateEqualsCriteria("attendantUserId.id", withdrawalFilterDTO.attendantUserId());
         SearchCriteria<Date> withdrawalDateCriteria = SpecificationHelper.generateEqualsCriteria("withdrawalDate", withdrawalFilterDTO.withdrawalDate());
 
         Specification<Withdrawal> beneficiarySpecification = new WithdrawalSpecification(beneficiaryCriteria);
