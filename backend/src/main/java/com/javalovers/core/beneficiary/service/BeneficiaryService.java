@@ -1,5 +1,6 @@
 package com.javalovers.core.beneficiary.service;
 
+import com.javalovers.common.exception.EntityNotFoundException;
 import com.javalovers.common.specification.SearchCriteria;
 import com.javalovers.common.specification.SpecificationHelper;
 import com.javalovers.core.beneficiary.domain.dto.request.BeneficiaryFilterDTO;
@@ -130,5 +131,11 @@ public class BeneficiaryService {
 
     public List<BeneficiaryDTO> generateBeneficiaryDTOList(List<Beneficiary> beneficiaryList) {
         return beneficiaryList.stream().map(beneficiaryDTOMapper::convert).toList();
+    }
+
+    public Beneficiary getOrThrowException(Long id) {
+        return beneficiaryRepository.findById(id).orElseThrow(
+                () -> new EntityNotFoundException("beneficiary", id)
+        );
     }
 }
