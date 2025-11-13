@@ -1,6 +1,7 @@
-package com.javalovers.core.withdrawal.domain.entity;
+package com.javalovers.core.itemwithdrawn.domain.entity;
 
 import com.javalovers.core.item.domain.entity.Item;
+import com.javalovers.core.withdrawal.domain.entity.Withdrawal;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
