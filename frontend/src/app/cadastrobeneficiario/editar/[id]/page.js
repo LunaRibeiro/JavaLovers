@@ -8,6 +8,7 @@ import apiService from "../../../../services/api";
 import { mapBeneficiaryFromBackend } from "../../../../services/dataMapper";
 import { useApi } from "../../../../hooks/useApi";
 import { useNotification } from "../../../../components/notifications/NotificationProvider";
+import { FaIdCard, FaPrint, FaPlus } from "react-icons/fa";
 
 const EditarBeneficiario = () => {
   const router = useRouter();
@@ -16,6 +17,9 @@ const EditarBeneficiario = () => {
   const { loading, error, execute, clearError } = useApi();
   const { showNotification } = useNotification();
   const [loadingData, setLoadingData] = useState(true);
+  const [activeTab, setActiveTab] = useState("dados");
+  const [card, setCard] = useState(null);
+  const [loadingCard, setLoadingCard] = useState(false);
   
   const [form, setForm] = useState({
     nomeCompleto: "",
@@ -61,8 +65,79 @@ const EditarBeneficiario = () => {
 
     if (id) {
       loadBeneficiary();
+      loadCard();
     }
   }, [id, router]);
+
+  const loadCard = async () => {
+    try {
+      setLoadingCard(true);
+      const cardData = await apiService.getCardByBeneficiaryId(id);
+      setCard(cardData);
+    } catch (err) {
+      console.error("Erro ao carregar cartão:", err);
+      setCard(null);
+    } finally {
+      setLoadingCard(false);
+    }
+  };
+
+  const handleGenerateCard = async () => {
+    try {
+      setLoadingCard(true);
+      const newCard = await apiService.generateCardForBeneficiary(id);
+      setCard(newCard);
+      showNotification("Cartão gerado com sucesso!", "success");
+    } catch (err) {
+      showNotification(err.message || "Erro ao gerar cartão", "error");
+    } finally {
+      setLoadingCard(false);
+    }
+  };
+
+  const handlePrintCard = () => {
+    if (!card) return;
+    const printWindow = window.open('', '_blank');
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Cartão de Identificação - ${form.nomeCompleto}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 40px; }
+            .card { border: 2px solid #000; padding: 30px; max-width: 400px; margin: 0 auto; }
+            .card-header { text-align: center; margin-bottom: 20px; }
+            .card-number { font-size: 24px; font-weight: bold; margin: 20px 0; }
+            .card-info { margin: 10px 0; }
+            .card-footer { margin-top: 20px; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <div class="card-header">
+              <h2>CARTÃO DE IDENTIFICAÇÃO</h2>
+              <h3>SANEM</h3>
+            </div>
+            <div class="card-info">
+              <strong>Nome:</strong> ${form.nomeCompleto}
+            </div>
+            <div class="card-info">
+              <strong>CPF/CRNM:</strong> ${form.cpfCrnm || form.nif || 'N/A'}
+            </div>
+            <div class="card-number">
+              Número: ${card.uniqueNumber}
+            </div>
+            <div class="card-footer">
+              <div>Data de Emissão: ${card.issueDate ? new Date(card.issueDate).toLocaleDateString('pt-BR') : 'N/A'}</div>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.print();
+  };
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -148,7 +223,46 @@ const EditarBeneficiario = () => {
         <div className={styles.formContainer}>
           <h1 className={styles.titulo}>Editar Beneficiário</h1>
           <div className={styles.decoracao}></div>
-          <form onSubmit={handleSubmit} className={styles.formulario}>
+          
+          {/* Tabs */}
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '2px solid #e0e0e0' }}>
+            <button
+              type="button"
+              onClick={() => setActiveTab("dados")}
+              style={{
+                padding: '10px 20px',
+                background: activeTab === "dados" ? '#4CAF50' : 'transparent',
+                color: activeTab === "dados" ? '#fff' : '#333',
+                border: 'none',
+                borderBottom: activeTab === "dados" ? '3px solid #4CAF50' : '3px solid transparent',
+                cursor: 'pointer',
+                fontWeight: '600',
+                fontSize: '1rem'
+              }}
+            >
+              Dados
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("cartao")}
+              style={{
+                padding: '10px 20px',
+                background: activeTab === "cartao" ? '#4CAF50' : 'transparent',
+                color: activeTab === "cartao" ? '#fff' : '#333',
+                border: 'none',
+                borderBottom: activeTab === "cartao" ? '3px solid #4CAF50' : '3px solid transparent',
+                cursor: 'pointer',
+                fontWeight: '600',
+                fontSize: '1rem'
+              }}
+            >
+              <FaIdCard style={{ marginRight: '8px', display: 'inline' }} />
+              Cartão
+            </button>
+          </div>
+
+          {activeTab === "dados" && (
+            <form onSubmit={handleSubmit} className={styles.formulario}>
             {/* Linha Nome e E-mail */}
             <div className={styles.formGroup}>
               <label htmlFor="nomeCompleto"><b>Nome completo*</b></label>
@@ -302,6 +416,98 @@ const EditarBeneficiario = () => {
             </div>
             {error && <div className={styles.errorMessage}>{error}</div>}
           </form>
+          )}
+
+          {activeTab === "cartao" && (
+            <div style={{ padding: '20px' }}>
+              {loadingCard ? (
+                <div style={{ textAlign: 'center', padding: '40px' }}>Carregando informações do cartão...</div>
+              ) : card ? (
+                <div style={{ 
+                  border: '2px solid #4CAF50', 
+                  borderRadius: '12px', 
+                  padding: '30px',
+                  background: '#f9f9f9'
+                }}>
+                  <h2 style={{ marginBottom: '20px', color: '#4CAF50' }}>Informações do Cartão</h2>
+                  <div style={{ marginBottom: '15px' }}>
+                    <strong>Número do Cartão:</strong>
+                    <div style={{ fontSize: '24px', fontWeight: 'bold', marginTop: '5px', color: '#333' }}>
+                      {card.uniqueNumber}
+                    </div>
+                  </div>
+                  <div style={{ marginBottom: '15px' }}>
+                    <strong>Data de Emissão:</strong>
+                    <div style={{ marginTop: '5px', color: '#666' }}>
+                      {card.issueDate ? new Date(card.issueDate).toLocaleDateString('pt-BR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      }) : 'N/A'}
+                    </div>
+                  </div>
+                  <div style={{ marginTop: '30px', display: 'flex', gap: '10px' }}>
+                    <button
+                      type="button"
+                      onClick={handlePrintCard}
+                      style={{
+                        background: '#2196F3',
+                        color: '#fff',
+                        border: 'none',
+                        padding: '12px 24px',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: '1rem',
+                        fontWeight: '600',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      <FaPrint /> Imprimir Cartão
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ 
+                  border: '2px dashed #ccc', 
+                  borderRadius: '12px', 
+                  padding: '40px',
+                  textAlign: 'center',
+                  background: '#f9f9f9'
+                }}>
+                  <FaIdCard style={{ fontSize: '48px', color: '#ccc', marginBottom: '20px' }} />
+                  <h3 style={{ marginBottom: '10px' }}>Nenhum cartão encontrado</h3>
+                  <p style={{ color: '#666', marginBottom: '30px' }}>
+                    Este beneficiário ainda não possui um cartão de identificação.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleGenerateCard}
+                    disabled={loadingCard}
+                    style={{
+                      background: '#4CAF50',
+                      color: '#fff',
+                      border: 'none',
+                      padding: '12px 24px',
+                      borderRadius: '8px',
+                      cursor: loadingCard ? 'not-allowed' : 'pointer',
+                      fontSize: '1rem',
+                      fontWeight: '600',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      margin: '0 auto'
+                    }}
+                  >
+                    <FaPlus /> {loadingCard ? 'Gerando...' : 'Gerar Cartão'}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

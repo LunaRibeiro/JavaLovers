@@ -221,6 +221,17 @@ class ApiService {
     });
   }
 
+  async getCardByBeneficiaryId(beneficiaryId) {
+    const cards = await this.getCards({ beneficiaryId });
+    return cards && cards.length > 0 ? cards[0] : null;
+  }
+
+  async generateCardForBeneficiary(beneficiaryId) {
+    return this.request(`/card/generate/${beneficiaryId}`, {
+      method: 'POST',
+    });
+  }
+
   // Métodos para Beneficiários
   async getBeneficiaries(filters = {}) {
     const queryParams = new URLSearchParams(filters).toString();
