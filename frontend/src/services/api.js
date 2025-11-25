@@ -276,6 +276,22 @@ class ApiService {
       method: 'PATCH',
     });
   }
+
+  // Métodos para Configuração de Limites de Retirada
+  async getWithdrawalLimitConfig() {
+    return this.request('/withdrawal-limit-config/active');
+  }
+
+  async updateWithdrawalLimitConfig(id, configData) {
+    return this.request(`/withdrawal-limit-config/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(configData),
+    });
+  }
+
+  async getWithdrawalLimitInfo(beneficiaryId) {
+    return this.request(`/withdrawal/beneficiary/${beneficiaryId}/limit-info`);
+  }
 }
 
 // Instância singleton do serviço
