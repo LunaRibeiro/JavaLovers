@@ -81,5 +81,14 @@ public class CardController {
 
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/generate/{beneficiaryId}")
+    public ResponseEntity<CardDTO> generateCardForBeneficiary(@PathVariable Long beneficiaryId, UriComponentsBuilder uriComponentsBuilder) {
+        Card card = cardService.generateCardForBeneficiary(beneficiaryId);
+
+        URI uri = HttpUtils.createURI(uriComponentsBuilder, "card", card.getCardId());
+
+        return ResponseEntity.created(uri).body(cardService.generateCardDTO(card));
+    }
 }
 

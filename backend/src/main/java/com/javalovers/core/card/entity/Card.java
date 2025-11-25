@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.Date;
+
 @Entity
 @Table(name = "card")
 @AllArgsConstructor
@@ -27,5 +29,9 @@ public class Card {
     @NotNull
     @Column(name = "beneficiary_id", unique = true)
     private Long beneficiaryId;
+
+    @Column(name = "issue_date")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date issueDate;
 
 }
