@@ -6,19 +6,25 @@ import com.javalovers.core.category.domain.entity.Category;
 import com.javalovers.core.item.domain.dto.request.ItemFilterDTO;
 import com.javalovers.core.item.domain.dto.request.ItemFormDTO;
 import com.javalovers.core.item.domain.dto.response.ItemDTO;
+import com.javalovers.core.item.domain.dto.response.ItemLabelDTO;
 import com.javalovers.core.item.domain.entity.Item;
 import com.javalovers.core.item.mapper.ItemCreateMapper;
 import com.javalovers.core.item.mapper.ItemDTOMapper;
 import com.javalovers.core.item.mapper.ItemUpdateMapper;
 import com.javalovers.core.item.repository.ItemRepository;
 import com.javalovers.core.item.specification.ItemSpecification;
+import com.javalovers.core.item.util.QRCodeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
+import com.google.zxing.WriterException;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +34,7 @@ public class ItemService {
     private final ItemCreateMapper itemCreateMapper;
     private final ItemDTOMapper itemDTOMapper;
     private final ItemUpdateMapper itemUpdateMapper;
+    private final QRCodeService qrCodeService;
     private Category category;
 
     public Item generateItem(ItemFormDTO itemFormDTO) {
@@ -84,6 +91,74 @@ public class ItemService {
 
     public List<ItemDTO> generateItemDTOList(List<Item> itemList) {
         return itemList.stream().map(itemDTOMapper::convert).toList();
+    }
+
+    @Transactional
+    public String generateTagCode(Long itemId) {
+        Item item = getOrNull(itemId);
+        if (item == null) {
+            throw new IllegalArgumentException("Item não encontrado");
+        }
+
+        if (item.getTagCode() != null && !item.getTagCode().isEmpty()) {
+            return item.getTagCode();
+        }
+
+        String tagCode = generateUniqueTagCode();
+        
+        // Garantir que o código seja único
+        while (itemRepository.findByTagCode(tagCode).isPresent()) {
+            tagCode = generateUniqueTagCode();
+        }
+
+        item.setTagCode(tagCode);
+        itemRepository.save(item);
+
+        return tagCode;
+    }
+
+    private String generateUniqueTagCode() {
+        String uuidPart = UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
+        String timestampPart = String.valueOf(System.currentTimeMillis()).substring(8);
+        return "ITEM-" + uuidPart + timestampPart;
+    }
+
+    public String generateQRCodeForItem(Long itemId) throws WriterException, IOException {
+        Item item = getOrNull(itemId);
+        if (item == null) {
+            throw new IllegalArgumentException("Item não encontrado");
+        }
+
+        String tagCode = item.getTagCode();
+        if (tagCode == null || tagCode.isEmpty()) {
+            tagCode = generateTagCode(itemId);
+        }
+
+        String qrData = String.format("ITEM:%s|DESC:%s", tagCode, item.getDescription());
+        return qrCodeService.generateQRCodeBase64(qrData);
+    }
+
+    public ItemLabelDTO generateItemLabel(Long itemId) throws WriterException, IOException {
+        Item item = getOrNull(itemId);
+        if (item == null) {
+            throw new IllegalArgumentException("Item não encontrado");
+        }
+
+        String tagCode = item.getTagCode();
+        if (tagCode == null || tagCode.isEmpty()) {
+            tagCode = generateTagCode(itemId);
+        }
+
+        String qrCodeBase64 = generateQRCodeForItem(itemId);
+        String categoryName = item.getCategoryId() != null ? item.getCategoryId().getName() : "Sem categoria";
+
+        return new ItemLabelDTO(
+                item.getItemId(),
+                item.getDescription(),
+                tagCode,
+                qrCodeBase64,
+                categoryName
+        );
     }
 
 }
