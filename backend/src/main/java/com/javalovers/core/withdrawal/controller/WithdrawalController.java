@@ -93,4 +93,20 @@ public class WithdrawalController {
 
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/beneficiary/{beneficiaryId}/limit-info")
+    public ResponseEntity<LimitInfoDTO> getLimitInfo(@PathVariable Long beneficiaryId) {
+        int itemsWithdrawn = withdrawalService.getItemsWithdrawnThisMonth(beneficiaryId);
+        int monthlyLimit = withdrawalService.getMonthlyLimit();
+        int remaining = Math.max(0, monthlyLimit - itemsWithdrawn);
+
+        LimitInfoDTO limitInfo = new LimitInfoDTO(itemsWithdrawn, monthlyLimit, remaining);
+        return ResponseEntity.ok(limitInfo);
+    }
+
+    public record LimitInfoDTO(
+            int itemsWithdrawnThisMonth,
+            int monthlyLimit,
+            int remainingItems
+    ) {}
 }
