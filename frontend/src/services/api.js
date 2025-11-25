@@ -99,6 +99,10 @@ class ApiService {
     });
   }
 
+  async generateItemLabel(id) {
+    return this.request(`/item/${id}/label`);
+  }
+
   // Métodos para Usuários
   async getUsers() {
     return this.request('/user/all');

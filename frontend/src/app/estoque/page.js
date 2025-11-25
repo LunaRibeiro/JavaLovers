@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import apiService from '../../services/api';
 import { mapItemFromBackend, mapItemToBackend } from '../../services/dataMapper';
 import { useApiList } from '../../hooks/useApi';
-import { FaPlus } from 'react-icons/fa';
+import { FaPlus, FaPrint, FaTag } from 'react-icons/fa';
 import { useNotification } from '../../components/notifications/NotificationProvider';
 import ConfirmationModal from '../../components/confirmation/ConfirmationModal';
 
@@ -79,6 +79,88 @@ export default function EstoquePage() {
     router.push(`/estoque/editar/${item.id}`);
   }
 
+  async function handleGenerateLabel(item) {
+    try {
+      const labelData = await apiService.generateItemLabel(item.id);
+      printLabel(labelData);
+      showNotification("Etiqueta gerada com sucesso!", "success");
+    } catch (err) {
+      showNotification(err.message || "Erro ao gerar etiqueta", "error");
+    }
+  }
+
+  function printLabel(labelData) {
+    const printWindow = window.open('', '_blank');
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Etiqueta - ${labelData.description}</title>
+          <style>
+            @media print {
+              @page { size: 4in 2in; margin: 0.2in; }
+              body { margin: 0; padding: 0; }
+            }
+            body { 
+              font-family: Arial, sans-serif; 
+              padding: 10px; 
+              margin: 0;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+            }
+            .label-container {
+              border: 2px solid #000;
+              padding: 15px;
+              width: 100%;
+              max-width: 350px;
+              text-align: center;
+            }
+            .label-header {
+              font-size: 14px;
+              font-weight: bold;
+              margin-bottom: 8px;
+            }
+            .label-description {
+              font-size: 12px;
+              margin: 8px 0;
+              word-wrap: break-word;
+            }
+            .label-code {
+              font-size: 16px;
+              font-weight: bold;
+              margin: 8px 0;
+              color: #333;
+            }
+            .label-category {
+              font-size: 10px;
+              color: #666;
+              margin-top: 5px;
+            }
+            .qr-code {
+              margin: 10px auto;
+              display: block;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="label-container">
+            <div class="label-header">SANEM - ETIQUETA DE ITEM</div>
+            <div class="label-description">${labelData.description}</div>
+            <div class="label-code">Código: ${labelData.tagCode}</div>
+            <div class="label-category">Categoria: ${labelData.categoryName}</div>
+            <img src="data:image/png;base64,${labelData.qrCodeBase64}" alt="QR Code" class="qr-code" style="width: 120px; height: 120px;" />
+          </div>
+        </body>
+      </html>
+    `;
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    setTimeout(() => {
+      printWindow.print();
+    }, 250);
+  }
+
   return (
     <div className={styles.containerGeral}>
       <MenuBar />
@@ -138,6 +220,16 @@ export default function EstoquePage() {
                           disabled={loading}
                         >
                           Editar
+                        </button>
+                        <button
+                          className={styles.editButton}
+                          onClick={() => handleGenerateLabel(item)}
+                          disabled={loading}
+                          title="Gerar Etiqueta"
+                          style={{ background: '#2196F3', marginLeft: '5px' }}
+                        >
+                          <FaTag style={{ marginRight: '5px' }} />
+                          Etiqueta
                         </button>
                         <button
                           className={styles.deleteButton}
