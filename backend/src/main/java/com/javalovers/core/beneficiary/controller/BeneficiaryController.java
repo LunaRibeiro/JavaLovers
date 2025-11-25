@@ -81,4 +81,26 @@ public class BeneficiaryController {
 
         return ResponseEntity.noContent().build();
     }
+
+    @PatchMapping("/{id}/approve")
+    public ResponseEntity<BeneficiaryDTO> approve(@PathVariable Long id, @RequestParam Long approverUserId) {
+        Beneficiary beneficiary = beneficiaryService.getOrNull(id);
+        if(beneficiary == null) return ResponseEntity.notFound().build();
+
+        beneficiaryService.approveBeneficiary(id, approverUserId);
+        
+        Beneficiary updatedBeneficiary = beneficiaryService.getOrThrowException(id);
+        return ResponseEntity.ok(beneficiaryService.generateBeneficiaryDTO(updatedBeneficiary));
+    }
+
+    @PatchMapping("/{id}/reject")
+    public ResponseEntity<BeneficiaryDTO> reject(@PathVariable Long id, @RequestParam Long approverUserId) {
+        Beneficiary beneficiary = beneficiaryService.getOrNull(id);
+        if(beneficiary == null) return ResponseEntity.notFound().build();
+
+        beneficiaryService.rejectBeneficiary(id, approverUserId);
+        
+        Beneficiary updatedBeneficiary = beneficiaryService.getOrThrowException(id);
+        return ResponseEntity.ok(beneficiaryService.generateBeneficiaryDTO(updatedBeneficiary));
+    }
 }

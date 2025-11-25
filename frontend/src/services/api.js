@@ -252,21 +252,14 @@ class ApiService {
     });
   }
 
-  async approveBeneficiary(id, status) {
-    // Primeiro, buscar o beneficiário atual para obter todos os dados
-    const beneficiary = await this.getBeneficiary(id);
+  async approveBeneficiary(id, status, approverUserId) {
+    const endpoint = status === 'APPROVED' 
+      ? `/beneficiary/${id}/approve?approverUserId=${approverUserId}`
+      : `/beneficiary/${id}/reject?approverUserId=${approverUserId}`;
     
-    // Atualizar o status e manter os outros dados
-    // O backend espera BeneficiaryFormDTO que tem: fullName, cpf, phone, socioeconomicData, beneficiaryStatus
-    const updateData = {
-      fullName: beneficiary.fullName,
-      cpf: beneficiary.cpf,
-      phone: beneficiary.phone || '',
-      socioeconomicData: beneficiary.socioeconomicData || '',
-      beneficiaryStatus: status
-    };
-    
-    return this.updateBeneficiary(id, updateData);
+    return this.request(endpoint, {
+      method: 'PATCH',
+    });
   }
 }
 

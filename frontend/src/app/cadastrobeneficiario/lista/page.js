@@ -43,7 +43,7 @@ export default function ListaBeneficiarios() {
   useEffect(() => {
     const checkAdmin = async () => {
       try {
-        const user = authService.getCurrentUser();
+        const user = authService.getUser();
         setIsAdmin(user?.role === "ADMIN");
       } catch (err) {
         console.error("Erro ao verificar permissões:", err);
@@ -80,7 +80,12 @@ export default function ListaBeneficiarios() {
   const handleApprove = async (id) => {
     setApprovingId(id);
     try {
-      await apiService.approveBeneficiary(id, "APPROVED");
+      const user = authService.getUser();
+      if (!user || !user.id) {
+        showNotification("Erro: usuário não autenticado", "error");
+        return;
+      }
+      await apiService.approveBeneficiary(id, "APPROVED", user.id);
       showNotification("Beneficiário aprovado com sucesso!", "success");
       loadDataRaw();
     } catch (err) {
@@ -96,7 +101,12 @@ export default function ListaBeneficiarios() {
       action: async () => {
         setApprovingId(id);
         try {
-          await apiService.approveBeneficiary(id, "REJECTED");
+          const user = authService.getUser();
+          if (!user || !user.id) {
+            showNotification("Erro: usuário não autenticado", "error");
+            return;
+          }
+          await apiService.approveBeneficiary(id, "REJECTED", user.id);
           showNotification("Beneficiário rejeitado com sucesso!", "success");
           loadDataRaw();
         } catch (err) {
