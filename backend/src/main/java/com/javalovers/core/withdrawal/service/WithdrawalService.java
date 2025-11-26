@@ -14,8 +14,6 @@ import com.javalovers.core.withdrawal.mapper.WithdrawalUpdateMapper;
 import com.javalovers.core.withdrawal.repository.WithdrawalRepository;
 import com.javalovers.core.withdrawal.specification.WithdrawalSpecification;
 import com.javalovers.core.withdrawallimit.service.WithdrawalLimitConfigService;
-import com.javalovers.core.itemwithdrawn.domain.entity.ItemWithdrawn;
-import com.javalovers.core.itemwithdrawn.repository.ItemWithdrawnRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import lombok.RequiredArgsConstructor;
@@ -25,8 +23,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -40,7 +36,6 @@ public class WithdrawalService {
     private final WithdrawalDTOMapper withdrawalDTOMapper;
     private final WithdrawalUpdateMapper withdrawalUpdateMapper;
     private final WithdrawalLimitConfigService limitConfigService;
-    private final ItemWithdrawnRepository itemWithdrawnRepository;
     private final EntityManager entityManager;
 
     public Withdrawal generateWithdrawal(WithdrawalFormDTO withdrawalFormDTO, Beneficiary beneficiary, AppUser attendantUser) {

@@ -114,3 +114,4 @@ public class CardService {
         String timestampPart = String.valueOf(System.currentTimeMillis()).substring(7);
         return "CARD-" + uuidPart + timestampPart;
     }
+}
