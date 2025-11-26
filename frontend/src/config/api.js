@@ -1,6 +1,6 @@
 // Configuração da API
 export const API_CONFIG = {
-  BASE_URL: process.env.NEXT_PUBLIC_API_URL || 'http://192.168.208.1:8080/api',
+  BASE_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api',
   TIMEOUT: 10000, // 10 segundos
   RETRY_ATTEMPTS: 3,
 };
