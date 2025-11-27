@@ -35,6 +35,9 @@
   letter-spacing: 0.5px;
   position: relative;
   padding-bottom: 10px;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow: visible;
 }
 
 .decoracao {
@@ -94,6 +97,9 @@
   text-align: left;
   padding: 15px 20px;
   font-size: 0.95rem;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow: visible;
 }
 
 .beneficiariosTable th {

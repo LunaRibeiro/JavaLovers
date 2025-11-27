@@ -31,6 +31,7 @@
   box-shadow: 0 4px 16px rgba(0,0,0,0.08);
   max-width: 100%;
   height: auto;
+  width: auto;
 }
 
 .effectPhrase {

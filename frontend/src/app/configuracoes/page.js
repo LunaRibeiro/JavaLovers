@@ -58,7 +58,7 @@ export default function ConfiguracoesPage() {
       <div style={{ minHeight: '100vh', background: '#fff', marginLeft: 220 }}>
         <MenuBar />
         <main style={{ padding: '40px', maxWidth: '800px', margin: '0 auto' }}>
-          <h1 style={{ fontSize: '2rem', marginBottom: '30px', color: '#333' }}>
+          <h1 style={{ fontSize: '2rem', marginBottom: '30px', color: '#333', whiteSpace: 'normal', wordWrap: 'break-word', overflow: 'visible' }}>
             Configurações
           </h1>
 
@@ -69,10 +69,10 @@ export default function ConfiguracoesPage() {
             border: '1px solid #e0e0e0',
             marginBottom: '30px'
           }}>
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '20px', color: '#4CAF50' }}>
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '20px', color: '#4CAF50', whiteSpace: 'normal', wordWrap: 'break-word', overflow: 'visible' }}>
               Limites de Retirada
             </h2>
-            <p style={{ color: '#666', marginBottom: '20px' }}>
+            <p style={{ color: '#666', marginBottom: '20px', whiteSpace: 'normal', wordWrap: 'break-word', overflow: 'visible' }}>
               Configure o limite mensal de itens que cada beneficiário pode retirar.
             </p>
 
@@ -81,7 +81,7 @@ export default function ConfiguracoesPage() {
             ) : (
               <form onSubmit={handleSubmit}>
                 <div style={{ marginBottom: '20px' }}>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#333' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#333', whiteSpace: 'normal', wordWrap: 'break-word', overflow: 'visible' }}>
                     Limite Mensal de Itens
                   </label>
                   <input

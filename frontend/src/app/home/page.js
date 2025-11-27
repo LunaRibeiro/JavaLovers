@@ -20,6 +20,7 @@ export default function Home() {
           width={320}
           height={180}
           className={styles.donationImage}
+          style={{ width: 'auto', height: 'auto' }}
           priority
         />
         <h1 className={styles.title}>Bem-vindo à Sanem!</h1>
