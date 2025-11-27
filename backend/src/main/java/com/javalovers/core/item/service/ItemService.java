@@ -2,7 +2,6 @@ package com.javalovers.core.item.service;
 
 import com.javalovers.common.specification.SearchCriteria;
 import com.javalovers.common.specification.SpecificationHelper;
-import com.javalovers.core.category.domain.entity.Category;
 import com.javalovers.core.item.domain.dto.request.ItemFilterDTO;
 import com.javalovers.core.item.domain.dto.request.ItemFormDTO;
 import com.javalovers.core.item.domain.dto.response.ItemDTO;
@@ -35,13 +34,19 @@ public class ItemService {
     private final ItemDTOMapper itemDTOMapper;
     private final ItemUpdateMapper itemUpdateMapper;
     private final QRCodeService qrCodeService;
-    private Category category;
 
     public Item generateItem(ItemFormDTO itemFormDTO) {
-        return itemCreateMapper.convert(itemFormDTO, category);
+        return itemCreateMapper.convert(itemFormDTO);
     }
 
-    public void save (Item item) {
+    @Transactional
+    public Item createAndSave(ItemFormDTO itemFormDTO) {
+        Item item = itemCreateMapper.convert(itemFormDTO);
+        return itemRepository.save(item);
+    }
+
+    @Transactional
+    public void save(Item item) {
         itemRepository.save(item);
     }
 
@@ -49,14 +54,13 @@ public class ItemService {
         return itemDTOMapper.convert(item);
     }
 
-    public Item getOrNull(Long id){
+    public Item getOrNull(Long id) {
         return itemRepository.findById(id).orElse(null);
     }
 
     public Item getOrThrowException(Long id) {
         return itemRepository.findById(id).orElseThrow(
-                () -> new com.javalovers.common.exception.EntityNotFoundException("item", id)
-        );
+                () -> new com.javalovers.common.exception.EntityNotFoundException("item", id));
     }
 
     public void updateItem(Item item, ItemFormDTO itemFormDTO) {
@@ -78,9 +82,12 @@ public class ItemService {
     }
 
     private Specification<Item> generateSpecification(ItemFilterDTO itemFilterDTO) {
-        SearchCriteria<String> descriptionCriteria = SpecificationHelper.generateInnerLikeCriteria("description", itemFilterDTO.description());
-        SearchCriteria<Long> stockQuantityCriteria = SpecificationHelper.generateEqualsCriteria("stockQuantity", itemFilterDTO.stockQuantity());
-        SearchCriteria<String> tagCodeCriteria = SpecificationHelper.generateInnerLikeCriteria("tagCode", itemFilterDTO.tagCode());
+        SearchCriteria<String> descriptionCriteria = SpecificationHelper.generateInnerLikeCriteria("description",
+                itemFilterDTO.description());
+        SearchCriteria<Long> stockQuantityCriteria = SpecificationHelper.generateEqualsCriteria("stockQuantity",
+                itemFilterDTO.stockQuantity());
+        SearchCriteria<String> tagCodeCriteria = SpecificationHelper.generateInnerLikeCriteria("tagCode",
+                itemFilterDTO.tagCode());
 
         Specification<Item> descriptionSpecification = new ItemSpecification(descriptionCriteria);
         Specification<Item> stockQuantitySpecification = new ItemSpecification(stockQuantityCriteria);
@@ -111,7 +118,7 @@ public class ItemService {
         }
 
         String tagCode = generateUniqueTagCode();
-        
+
         // Garantir que o código seja único
         while (itemRepository.findByTagCode(tagCode).isPresent()) {
             tagCode = generateUniqueTagCode();
@@ -156,15 +163,12 @@ public class ItemService {
         }
 
         String qrCodeBase64 = generateQRCodeForItem(itemId);
-        String categoryName = item.getCategoryId() != null ? item.getCategoryId().getName() : "Sem categoria";
 
         return new ItemLabelDTO(
                 item.getItemId(),
                 item.getDescription(),
                 tagCode,
-                qrCodeBase64,
-                categoryName
-        );
+                qrCodeBase64);
     }
 
 }

@@ -56,6 +56,7 @@ CREATE TABLE card (
      card_id INT AUTO_INCREMENT PRIMARY KEY,
      unique_number VARCHAR(64) NOT NULL,
      beneficiary_id INT NOT NULL,
+     issue_date TIMESTAMP(6) NULL,
 
      CONSTRAINT fk_card_beneficiary FOREIGN KEY (beneficiary_id) REFERENCES beneficiary(beneficiary_id)
           ON UPDATE RESTRICT ON DELETE RESTRICT,
@@ -75,10 +76,7 @@ CREATE TABLE item (
     description VARCHAR(200) NOT NULL,
     stock_quantity INT NOT NULL DEFAULT 0,
     tag_code VARCHAR(64),
-    category_id INT NOT NULL,
 
-    CONSTRAINT fk_item_category FOREIGN KEY (category_id) REFERENCES category(category_id)
-         ON UPDATE RESTRICT ON DELETE RESTRICT,
     UNIQUE KEY uq_item_code (tag_code),
     CHECK (stock_quantity >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

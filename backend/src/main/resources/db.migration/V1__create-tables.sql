@@ -39,6 +39,7 @@ create table card (
    card_id                         bigserial,
    unique_number                   varchar(64) not null unique,
    beneficiary_id                  bigint not null unique,
+   issue_date                      timestamp(6),
    primary key (card_id),
 
    constraint fk_card_beneficiary foreign key (beneficiary_id) references beneficiary(beneficiary_id)
@@ -56,10 +57,7 @@ create table item (
     description                     varchar(200) not null,
     stock_quantity                  int not null default 0 check (stock_quantity >= 0),
     tag_code                        varchar(64) unique,
-    category_id                     bigint not null,
-    primary key (item_id),
-
-    constraint fk_item_category foreign key (category_id) references category(category_id)
+    primary key (item_id)
 );
 
 create table donor (

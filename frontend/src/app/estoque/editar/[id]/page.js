@@ -19,8 +19,6 @@ const EditarItem = () => {
   
   const [form, setForm] = useState({
     nome: "",
-    categoria: "",
-    tamanho: "",
     quantidade: ""
   });
 
@@ -32,8 +30,6 @@ const EditarItem = () => {
         const mappedItem = mapItemFromBackend(item);
         setForm({
           nome: mappedItem.nome || "",
-          categoria: mappedItem.categoria || "",
-          tamanho: mappedItem.tamanho || "",
           quantidade: mappedItem.quantidade || ""
         });
       } catch (err) {
@@ -109,30 +105,6 @@ const EditarItem = () => {
                 onChange={handleChange} 
                 required 
                 placeholder="Nome do item" 
-              />
-            </div>
-            <div className={styles.formGroup}>
-              <label htmlFor="categoria"><b>Categoria*</b></label>
-              <input 
-                id="categoria" 
-                name="categoria" 
-                className={styles.formInput}
-                value={form.categoria} 
-                onChange={handleChange} 
-                required 
-                placeholder="Categoria" 
-              />
-            </div>
-            <div className={styles.formGroup}>
-              <label htmlFor="tamanho"><b>Tamanho*</b></label>
-              <input 
-                id="tamanho" 
-                name="tamanho" 
-                className={styles.formInput}
-                value={form.tamanho} 
-                onChange={handleChange} 
-                required 
-                placeholder="Tamanho" 
               />
             </div>
             <div className={styles.formGroup}>

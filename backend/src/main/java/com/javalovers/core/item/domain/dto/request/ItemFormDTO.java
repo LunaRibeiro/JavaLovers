@@ -1,9 +1,15 @@
 package com.javalovers.core.item.domain.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public record ItemFormDTO(
+        @JsonProperty("description")
         String description,
+        
+        @JsonProperty("stockQuantity")
         Long stockQuantity,
-        String tagCode,
-        Long categoryId
+        
+        @JsonProperty("tagCode")
+        String tagCode
 ) {
 }

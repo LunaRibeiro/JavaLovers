@@ -56,8 +56,7 @@ public class ItemController {
 
     @PostMapping
     public ResponseEntity<ItemDTO> create(@RequestBody @Valid ItemFormDTO itemFormDTO, UriComponentsBuilder uriComponentsBuilder) {
-        Item item = itemService.generateItem(itemFormDTO);
-        itemService.save(item);
+        Item item = itemService.createAndSave(itemFormDTO);
 
         URI uri = HttpUtils.createURI(uriComponentsBuilder, "item", item.getItemId());
 

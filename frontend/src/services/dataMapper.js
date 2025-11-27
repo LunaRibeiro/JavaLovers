@@ -26,8 +26,7 @@ export const mapItemToBackend = (frontendItem) => {
   return {
     description: frontendItem.nome || frontendItem.descricao || '',
     stockQuantity: frontendItem.quantidade || 0,
-    tagCode: frontendItem.tagCode || null,
-    categoryId: frontendItem.categoriaId || null,
+    tagCode: frontendItem.tagCode || null
   };
 };
 
@@ -37,9 +36,6 @@ export const mapItemFromBackend = (backendItem) => {
     nome: backendItem.description,
     descricao: backendItem.description,
     quantidade: backendItem.stockQuantity,
-    categoria: backendItem.category?.name || '',
-    categoriaId: backendItem.category?.categoryId || null,
-    tamanho: '', // Campo não disponível no backend
     tagCode: backendItem.tagCode || null,
   };
 };
