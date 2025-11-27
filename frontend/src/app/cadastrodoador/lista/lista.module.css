@@ -9,41 +9,38 @@
 /* Container Geral da Página - Reutiliza do CSS do formulário, mas adapta se necessário */
 .containerGeral {
   min-height: 100vh;
-  /* background: var(--color-bg); removido, já no body global */
   display: flex;
   flex-direction: column;
-  align-items: center; /* Centraliza horizontalmente o conteúdo principal */
-  justify-content: flex-start;
-  padding-bottom: 40px; /* Espaço para o final da página */
+  margin-left: 250px; /* Espaço para a sidebar fixa */
+  width: calc(100% - 250px);
+  box-sizing: border-box;
 }
 
-/* Wrapper para o conteúdo da lista (centraliza e controla a largura máxima) */
+/* Wrapper para o conteúdo da lista (ocupa toda a largura disponível) */
 .contentWrapper {
-  flex-grow: 1; /* Permite que o wrapper ocupe o espaço restante */
+  flex: 1;
   width: 100%;
-  max-width: 1200px; /* Largura máxima para a tabela */
-  padding: 20px; /* Padding nas laterais em telas maiores */
-  display: flex;
-  justify-content: center; /* Centraliza o listContainer dentro do wrapper */
-  align-items: flex-start; /* Alinha o conteúdo ao topo */
-}
-
-/* Contêiner da Lista em si (similar ao formContainer, mas para lista) */
-.listContainer {
-  background: var(--color-bg-alt); /* Usa a variável global do seu :root */
-  border-radius: 18px;
-  box-shadow: 0 4px 30px 0 rgba(0, 0, 0, 0.08); /* Sombra mais suave */
-  padding: 40px 60px; /* Padding interno aumentado */
-  width: 100%; /* Ocupa toda a largura do contentWrapper */
-  border: 1px solid var(--color-border-light); /* Usa a variável global */
+  padding: 20px 30px; /* Padding interno */
   display: flex;
   flex-direction: column;
+  margin-top: 56px; /* Espaço para o MenuBar fixo */
+  box-sizing: border-box;
+}
+
+/* Contêiner da Lista em si - sem quadro branco, preenche o fundo */
+.listContainer {
+  background: transparent; /* Transparente para usar o fundo do body */
+  padding: 0; /* Remove padding que cria o quadro */
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 /* Título da Página - Reutiliza estilos do global ou de cadastro */
 .titulo {
-  text-align: center;
-  font-size: 2.5rem; /* Fonte maior */
+  text-align: left; /* Alinha à esquerda */
+  font-size: 2rem; /* Fonte um pouco menor */
   color: var(--color-text); /* Usa a variável global */
   margin-bottom: 12px;
   font-weight: 800;
@@ -56,14 +53,14 @@
   width: 80px; /* Linha de decoração mais larga */
   height: 6px; /* Linha de decoração mais grossa */
   background: var(--color-primary); /* Usa a variável global */
-  margin: 0 auto 30px auto; /* Centraliza e adiciona margem inferior */
+  margin: 0 0 30px 0; /* Alinha à esquerda */
   border-radius: 3px;
 }
 
 /* Header com botões de ação e mensagens */
 .actionsHeader {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end; /* Alinha botão à direita */
   align-items: center;
   margin-bottom: 25px;
   flex-wrap: wrap; /* Permite quebrar linha em telas pequenas */

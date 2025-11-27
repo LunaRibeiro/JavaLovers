@@ -1,38 +1,34 @@
-/* Container Geral da Página - Reutiliza do CSS do formulário, mas adapta se necessário */
 .containerGeral {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  margin-left: 250px; /* Espaço para a sidebar fixa */
-  width: calc(100% - 250px);
+  margin-left: 220px;
+  width: calc(100% - 220px);
   box-sizing: border-box;
 }
 
-/* Wrapper para o conteúdo da lista (ocupa toda a largura disponível) */
 .contentWrapper {
   flex: 1;
   width: 100%;
-  padding: 20px 30px; /* Padding interno */
+  padding: 20px 30px;
   display: flex;
   flex-direction: column;
-  margin-top: 56px; /* Espaço para o MenuBar fixo */
+  margin-top: 56px;
   box-sizing: border-box;
 }
 
-/* Contêiner da Lista em si - sem quadro branco, preenche o fundo */
 .listContainer {
-  background: transparent; /* Transparente para usar o fundo do body */
-  padding: 0; /* Remove padding que cria o quadro */
+  background: transparent;
+  padding: 0;
   width: 100%;
   display: flex;
   flex-direction: column;
   flex: 1;
 }
 
-/* Título da Página */
 .titulo {
-  text-align: left; /* Alinha à esquerda */
-  font-size: 2rem; /* Fonte um pouco menor */
+  text-align: left;
+  font-size: 2rem;
   color: var(--color-text);
   margin-bottom: 12px;
   font-weight: 800;
@@ -45,14 +41,13 @@
   width: 80px;
   height: 6px;
   background: var(--color-primary);
-  margin: 0 0 30px 0; /* Alinha à esquerda */
+  margin: 0 0 30px 0;
   border-radius: 3px;
 }
 
-/* Header com botões de ação */
 .actionsHeader {
   display: flex;
-  justify-content: flex-end; /* Alinha botão à direita */
+  justify-content: flex-end;
   align-items: center;
   margin-bottom: 25px;
   flex-wrap: wrap;
@@ -83,7 +78,6 @@
   transform: translateY(-1px);
 }
 
-/* Estilos para Tabela */
 .tableWrapper {
   overflow-x: auto;
   width: 100%;
@@ -151,7 +145,6 @@
   border-bottom-right-radius: 8px;
 }
 
-/* Botões de Ação dentro da Tabela */
 .actionButtons {
   display: flex;
   gap: 8px;
@@ -160,7 +153,7 @@
   width: 100%;
 }
 
-.editButton, .deleteButton, .approveButton, .rejectButton {
+.editButton, .deleteButton {
   padding: 8px 15px;
   font-size: 0.9rem;
   font-weight: 600;
@@ -195,13 +188,12 @@
   transform: translateY(-1px);
 }
 
-.editButton:disabled, .deleteButton:disabled, .addButton:disabled, .approveButton:disabled, .rejectButton:disabled {
+.editButton:disabled, .deleteButton:disabled {
   background: #cccccc;
   cursor: not-allowed;
   opacity: 0.7;
 }
 
-/* Mensagens de estado */
 .loadingMessage, .errorMessage, .noDataMessage {
   text-align: center;
   padding: 20px;
@@ -231,109 +223,155 @@
   border-color: var(--color-border);
 }
 
-/* Modal */
+/* Modal Styles */
 .modalOverlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.35);
-  z-index: 1000;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 99999;
   display: flex;
   align-items: center;
   justify-content: center;
+  animation: fadeIn 0.2s ease-out;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .modalContent {
   background: var(--color-bg-alt);
-  border-radius: 18px;
-  box-shadow: 0 8px 32px 0 rgba(25, 118, 210, 0.18);
-  padding: 40px 60px;
-  max-width: 600px;
-  width: 96vw;
-  border: 1.5px solid var(--color-border-light);
-  display: flex;
-  flex-direction: column;
-  position: relative;
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.3s ease-out;
+  border: 1px solid var(--color-border-light);
+  overflow-y: auto;
 }
 
-.formulario {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modalContent h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 24px 0;
 }
 
 .formGroup {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  margin-bottom: 20px;
 }
 
 .formGroup label {
+  display: block;
+  margin-bottom: 8px;
   font-weight: 600;
   color: var(--color-text);
-  margin-bottom: 8px;
-  font-size: 0.98rem;
+  font-size: 0.95rem;
 }
 
-.formInput {
+.formGroup input,
+.formGroup select {
   width: 100%;
-  padding: 12px 14px;
-  border: 1.5px solid var(--color-border-light);
+  padding: 12px;
+  border: 2px solid var(--color-border);
   border-radius: 8px;
-  font-size: 1.05rem;
-  background: #fff;
-  color: #222;
-  transition: border 0.2s;
+  font-size: 1rem;
+  transition: border-color 0.3s;
+  box-sizing: border-box;
 }
 
-.formInput:focus {
+.formGroup input:focus,
+.formGroup select:focus {
   outline: none;
-  border: 1.5px solid var(--color-primary);
+  border-color: var(--color-primary);
 }
 
-.modalButtonGroup {
+.inputError {
+  border-color: var(--color-error) !important;
+}
+
+.errorText {
+  display: block;
+  color: var(--color-error);
+  font-size: 0.85rem;
+  margin-top: 4px;
+}
+
+.modalActions {
   display: flex;
-  gap: 18px;
-  justify-content: center;
-  width: 100%;
+  gap: 12px;
+  justify-content: flex-end;
   margin-top: 24px;
 }
 
-.submitButton, .cancelButton {
-  padding: 12px 28px;
-  border: none;
+.cancelButton {
+  padding: 12px 24px;
+  border: 1.5px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
   border-radius: 8px;
-  font-size: 1.08rem;
-  font-weight: 700;
+  font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s, transform 0.2s;
-  min-width: 150px;
+  transition: all 0.2s ease;
+}
+
+.cancelButton:hover {
+  background: var(--color-bg);
+  border-color: var(--color-border-light);
 }
 
 .submitButton {
+  padding: 12px 28px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   background: var(--color-primary);
   color: #fff;
 }
 
-.submitButton:hover {
+.submitButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   background: var(--color-primary-dark);
-  transform: translateY(-1px);
 }
 
-.cancelButton {
-  background: #aaa;
-  color: #fff;
+.submitButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
-.cancelButton:hover {
-  background: #888;
-  transform: translateY(-1px);
-}
-
-/* Responsividade para telas menores */
 @media (max-width: 768px) {
   .listContainer {
     padding: 20px;
@@ -341,81 +379,9 @@
   .titulo {
     font-size: 2rem;
   }
-  .actionsHeader {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-  }
-  .addButton {
-    width: 100%;
-  }
   .modalContent {
-    padding: 30px 20px;
-  }
-  .beneficiariosTable {
-    border-spacing: 0;
-  }
-  .beneficiariosTable thead {
-    display: none;
-  }
-  .beneficiariosTable, .beneficiariosTable tbody, .beneficiariosTable tr, .beneficiariosTable td {
-    display: block;
-    width: 100%;
-  }
-  .beneficiariosTable tr {
-    margin-bottom: 15px;
-    border: 1px solid var(--color-border);
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-    padding: 15px;
-    background-color: var(--color-bg-alt);
-  }
-  .beneficiariosTable td {
-    text-align: right;
-    padding: 8px 10px;
-    border: none;
-    position: relative;
-    padding-left: 50%;
-    min-height: 35px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-  }
-  .beneficiariosTable td::before {
-    content: attr(data-label);
-    position: absolute;
-    left: 10px;
-    width: calc(50% - 20px);
-    text-align: left;
-    font-weight: 700;
-    color: var(--color-text);
-  }
-  .beneficiariosTable td:nth-of-type(1)::before { content: "ID:"; }
-  .beneficiariosTable td:nth-of-type(2)::before { content: "Nome:"; }
-  .beneficiariosTable td:nth-of-type(3)::before { content: "Categoria:"; }
-  .beneficiariosTable td:nth-of-type(4)::before { content: "Tamanho:"; }
-  .beneficiariosTable td:nth-of-type(5)::before { content: "Quantidade:"; }
-  .beneficiariosTable td:nth-of-type(6)::before { content: "Ações:"; }
-
-  .actionButtons {
-    justify-content: flex-end;
-    margin-top: 10px;
-    width: 100%;
-  }
-  .editButton, .deleteButton {
-    flex-grow: 1;
-    padding: 10px 15px;
+    padding: 24px;
+    margin: 20px;
   }
 }
 
-@media (max-width: 480px) {
-  .listContainer {
-    padding: 15px;
-  }
-  .titulo {
-    font-size: 1.8rem;
-  }
-  .modalContent {
-    padding: 20px 15px;
-  }
-}
