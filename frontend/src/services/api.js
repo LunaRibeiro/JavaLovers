@@ -80,18 +80,6 @@ class ApiService {
   }
 
   async createItem(itemData) {
-    // Debug: verificar o que está sendo enviado
-    console.log("ApiService.createItem - itemData recebido:", itemData);
-    console.log("ApiService.createItem - JSON.stringify:", JSON.stringify(itemData));
-    console.log("ApiService.createItem - categoryId:", itemData.categoryId, "tipo:", typeof itemData.categoryId);
-    
-    // Garantir que categoryId seja um número
-    if (itemData.categoryId !== null && itemData.categoryId !== undefined) {
-      itemData.categoryId = Number(itemData.categoryId);
-    }
-    
-    console.log("ApiService.createItem - itemData após conversão:", itemData);
-    
     return this.request('/item', {
       method: 'POST',
       body: JSON.stringify(itemData),
