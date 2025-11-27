@@ -1,18 +1,40 @@
+"use client";
+import { useState, useEffect } from 'react';
 import styles from './menuBar.module.css';
 import Image from 'next/image';
+import authService from '../../../services/authService';
+import { useRouter } from 'next/navigation';
+import { useNotification } from '../../../components/notifications/NotificationProvider';
 
 export default function MenuBar({ hasNotification }) {
+  const [userName, setUserName] = useState('Usuário');
+  const router = useRouter();
+  const { showNotification } = useNotification();
+
+  useEffect(() => {
+    const user = authService.getUser();
+    if (user && user.name) {
+      setUserName(user.name);
+    }
+  }, []);
+
+  const handleLogout = () => {
+    authService.logout();
+    showNotification("Logout realizado com sucesso!", "success");
+    router.push('/');
+  };
+
   return (
     <header className={styles.menuBar}>
       <div className={styles.rightSection}>
         <div className={styles.userInfo}>
           <UserIcon />
-          <span className={styles.userName}>Fulano da Silva</span>
+          <span className={styles.userName}>{userName}</span>
           <span className={styles.arrowDown}>▼</span>
         </div>
         <div className={styles.iconWrapper} style={{ position: 'relative' }}>
         </div>
-        <div className={styles.iconWrapper}>
+        <div className={styles.iconWrapper} onClick={handleLogout} title="Sair">
           <LogoutIcon />
         </div>
       </div>

@@ -62,7 +62,7 @@ public class WithdrawalController {
         AppUser attendantUser = appUserService.getOrThrowException(withdrawalFormDTO.attendantUserId());
 
         Withdrawal withdrawal = withdrawalService.generateWithdrawal(withdrawalFormDTO, beneficiary, attendantUser);
-        withdrawalService.save(withdrawal);
+        withdrawalService.save(withdrawal, withdrawalFormDTO);
 
         URI uri = HttpUtils.createURI(uriComponentsBuilder, "withdrawal", withdrawal.getWithdrawalId());
 
@@ -97,7 +97,7 @@ public class WithdrawalController {
     @GetMapping("/beneficiary/{beneficiaryId}/limit-info")
     public ResponseEntity<LimitInfoDTO> getLimitInfo(@PathVariable Long beneficiaryId) {
         int itemsWithdrawn = withdrawalService.getItemsWithdrawnThisMonth(beneficiaryId);
-        int monthlyLimit = withdrawalService.getMonthlyLimit();
+        int monthlyLimit = withdrawalService.getMonthlyLimit(beneficiaryId);
         int remaining = Math.max(0, monthlyLimit - itemsWithdrawn);
 
         LimitInfoDTO limitInfo = new LimitInfoDTO(itemsWithdrawn, monthlyLimit, remaining);

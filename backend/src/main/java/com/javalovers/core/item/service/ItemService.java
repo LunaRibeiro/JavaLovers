@@ -53,6 +53,12 @@ public class ItemService {
         return itemRepository.findById(id).orElse(null);
     }
 
+    public Item getOrThrowException(Long id) {
+        return itemRepository.findById(id).orElseThrow(
+                () -> new com.javalovers.common.exception.EntityNotFoundException("item", id)
+        );
+    }
+
     public void updateItem(Item item, ItemFormDTO itemFormDTO) {
         itemUpdateMapper.update(item, itemFormDTO);
     }

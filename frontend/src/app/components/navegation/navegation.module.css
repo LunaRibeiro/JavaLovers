@@ -67,4 +67,6 @@
 .active {
   background: #e9eafd;
   color: #2a3cff;
+  font-weight: 600;
+  border-left: 4px solid #2a3cff;
 } 

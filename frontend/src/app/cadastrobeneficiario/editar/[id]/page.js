@@ -8,7 +8,7 @@ import apiService from "../../../../services/api";
 import { mapBeneficiaryFromBackend } from "../../../../services/dataMapper";
 import { useApi } from "../../../../hooks/useApi";
 import { useNotification } from "../../../../components/notifications/NotificationProvider";
-import { FaIdCard, FaPrint, FaPlus } from "react-icons/fa";
+import { FaIdCard, FaPrint, FaPlus, FaHistory } from "react-icons/fa";
 
 const EditarBeneficiario = () => {
   const router = useRouter();
@@ -20,6 +20,8 @@ const EditarBeneficiario = () => {
   const [activeTab, setActiveTab] = useState("dados");
   const [card, setCard] = useState(null);
   const [loadingCard, setLoadingCard] = useState(false);
+  const [withdrawals, setWithdrawals] = useState([]);
+  const [loadingWithdrawals, setLoadingWithdrawals] = useState(false);
   
   const [form, setForm] = useState({
     nomeCompleto: "",
@@ -32,7 +34,8 @@ const EditarBeneficiario = () => {
     numero: "",
     complemento: "",
     pontoReferencia: "",
-    status: "PENDING"
+    status: "PENDING",
+    withdrawalLimit: ""
   });
 
   useEffect(() => {
@@ -52,7 +55,9 @@ const EditarBeneficiario = () => {
           numero: mappedBeneficiary.numero || "",
           complemento: mappedBeneficiary.complemento || "",
           pontoReferencia: mappedBeneficiary.pontoReferencia || "",
-          status: mappedBeneficiary.status || "PENDING"
+          status: mappedBeneficiary.status || "PENDING",
+          withdrawalLimit: mappedBeneficiary.withdrawalLimit || "",
+          currentWithdrawalsThisMonth: mappedBeneficiary.currentWithdrawalsThisMonth || 0
         });
       } catch (err) {
         console.error("Erro ao carregar beneficiário:", err);
@@ -68,6 +73,25 @@ const EditarBeneficiario = () => {
       loadCard();
     }
   }, [id, router]);
+
+  const loadWithdrawals = async () => {
+    try {
+      setLoadingWithdrawals(true);
+      const withdrawalsData = await apiService.getBeneficiaryWithdrawals(id);
+      setWithdrawals(withdrawalsData || []);
+    } catch (err) {
+      console.error("Erro ao carregar histórico de retiradas:", err);
+      setWithdrawals([]);
+    } finally {
+      setLoadingWithdrawals(false);
+    }
+  };
+
+  useEffect(() => {
+    if (id && activeTab === "historico") {
+      loadWithdrawals();
+    }
+  }, [id, activeTab]);
 
   const loadCard = async () => {
     try {
@@ -85,58 +109,15 @@ const EditarBeneficiario = () => {
   const handleGenerateCard = async () => {
     try {
       setLoadingCard(true);
-      const newCard = await apiService.generateCardForBeneficiary(id);
-      setCard(newCard);
-      showNotification("Cartão gerado com sucesso!", "success");
+      await apiService.generateCardForBeneficiary(id);
+      // Recarregar o cartão após gerar
+      await loadCard();
+      showNotification("Cartão gerado e baixado com sucesso!", "success");
     } catch (err) {
       showNotification(err.message || "Erro ao gerar cartão", "error");
     } finally {
       setLoadingCard(false);
     }
-  };
-
-  const handlePrintCard = () => {
-    if (!card) return;
-    const printWindow = window.open('', '_blank');
-    const printContent = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Cartão de Identificação - ${form.nomeCompleto}</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 40px; }
-            .card { border: 2px solid #000; padding: 30px; max-width: 400px; margin: 0 auto; }
-            .card-header { text-align: center; margin-bottom: 20px; }
-            .card-number { font-size: 24px; font-weight: bold; margin: 20px 0; }
-            .card-info { margin: 10px 0; }
-            .card-footer { margin-top: 20px; font-size: 12px; color: #666; }
-          </style>
-        </head>
-        <body>
-          <div class="card">
-            <div class="card-header">
-              <h2>CARTÃO DE IDENTIFICAÇÃO</h2>
-              <h3>SANEM</h3>
-            </div>
-            <div class="card-info">
-              <strong>Nome:</strong> ${form.nomeCompleto}
-            </div>
-            <div class="card-info">
-              <strong>CPF/CRNM:</strong> ${form.cpfCrnm || form.nif || 'N/A'}
-            </div>
-            <div class="card-number">
-              Número: ${card.uniqueNumber}
-            </div>
-            <div class="card-footer">
-              <div>Data de Emissão: ${card.issueDate ? new Date(card.issueDate).toLocaleDateString('pt-BR') : 'N/A'}</div>
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
-    printWindow.document.write(printContent);
-    printWindow.document.close();
-    printWindow.print();
   };
 
   const handleChange = (e) => {
@@ -188,7 +169,8 @@ const EditarBeneficiario = () => {
           complemento: form.complemento,
           pontoReferencia: form.pontoReferencia,
         }),
-        beneficiaryStatus: form.status || 'PENDING'
+        beneficiaryStatus: form.status || 'PENDING',
+        withdrawalLimit: form.withdrawalLimit ? parseInt(form.withdrawalLimit) : null
       };
 
       // Chama a API de atualização
@@ -258,6 +240,23 @@ const EditarBeneficiario = () => {
             >
               <FaIdCard style={{ marginRight: '8px', display: 'inline' }} />
               Cartão
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("historico")}
+              style={{
+                padding: '10px 20px',
+                background: activeTab === "historico" ? '#4CAF50' : 'transparent',
+                color: activeTab === "historico" ? '#fff' : '#333',
+                border: 'none',
+                borderBottom: activeTab === "historico" ? '3px solid #4CAF50' : '3px solid transparent',
+                cursor: 'pointer',
+                fontWeight: '600',
+                fontSize: '1rem'
+              }}
+            >
+              <FaHistory style={{ marginRight: '8px', display: 'inline' }} />
+              Histórico
             </button>
           </div>
 
@@ -392,6 +391,32 @@ const EditarBeneficiario = () => {
                 placeholder="Em frente ao parque" 
               />
             </div>
+
+            <hr className={styles.separador} />
+
+            <div className={styles.formGroup}>
+              <label htmlFor="withdrawalLimit"><b>Limite de Retiradas Mensais (opcional)</b></label>
+              <input
+                id="withdrawalLimit"
+                name="withdrawalLimit"
+                type="number"
+                min="0"
+                value={form.withdrawalLimit}
+                onChange={e => {
+                  const value = e.target.value === "" ? "" : parseInt(e.target.value) || 0;
+                  setForm({ ...form, withdrawalLimit: value });
+                }}
+                placeholder="Ex: 10"
+              />
+              <small style={{ color: '#666', fontSize: '0.9rem', display: 'block', marginTop: '5px' }}>
+                Deixe em branco para usar o limite global do sistema
+                {form.currentWithdrawalsThisMonth !== undefined && form.withdrawalLimit && (
+                  <span style={{ display: 'block', marginTop: '5px', fontWeight: 'bold', color: '#4CAF50' }}>
+                    Retiradas este mês: {form.currentWithdrawalsThisMonth || 0}/{form.withdrawalLimit}
+                  </span>
+                )}
+              </small>
+            </div>
             
             <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
               <button 
@@ -448,27 +473,6 @@ const EditarBeneficiario = () => {
                       }) : 'N/A'}
                     </div>
                   </div>
-                  <div style={{ marginTop: '30px', display: 'flex', gap: '10px' }}>
-                    <button
-                      type="button"
-                      onClick={handlePrintCard}
-                      style={{
-                        background: '#2196F3',
-                        color: '#fff',
-                        border: 'none',
-                        padding: '12px 24px',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        fontSize: '1rem',
-                        fontWeight: '600',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px'
-                      }}
-                    >
-                      <FaPrint /> Imprimir Cartão
-                    </button>
-                  </div>
                 </div>
               ) : (
                 <div style={{ 
@@ -504,6 +508,68 @@ const EditarBeneficiario = () => {
                   >
                     <FaPlus /> {loadingCard ? 'Gerando...' : 'Gerar Cartão'}
                   </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "historico" && (
+            <div style={{ padding: '20px' }}>
+              {loadingWithdrawals ? (
+                <div style={{ textAlign: 'center', padding: '40px' }}>Carregando histórico...</div>
+              ) : withdrawals.length === 0 ? (
+                <div style={{ 
+                  border: '2px dashed #ccc', 
+                  borderRadius: '12px', 
+                  padding: '40px',
+                  textAlign: 'center',
+                  background: '#f9f9f9'
+                }}>
+                  <FaHistory style={{ fontSize: '48px', color: '#ccc', marginBottom: '20px' }} />
+                  <h3 style={{ marginBottom: '10px' }}>Nenhuma retirada registrada</h3>
+                  <p style={{ color: '#666' }}>
+                    Este beneficiário ainda não possui retiradas registradas.
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <h2 style={{ marginBottom: '20px', color: '#4CAF50' }}>Histórico de Retiradas</h2>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff', borderRadius: '8px', overflow: 'hidden' }}>
+                      <thead>
+                        <tr style={{ background: '#4CAF50', color: '#fff' }}>
+                          <th style={{ padding: '12px', textAlign: 'left' }}>Data</th>
+                          <th style={{ padding: '12px', textAlign: 'left' }}>Atendente</th>
+                          <th style={{ padding: '12px', textAlign: 'left' }}>Itens</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {withdrawals.map((withdrawal, index) => (
+                          <tr key={withdrawal.withdrawalId || index} style={{ borderBottom: '1px solid #e0e0e0' }}>
+                            <td style={{ padding: '12px' }}>
+                              {withdrawal.withdrawalDate 
+                                ? new Date(withdrawal.withdrawalDate).toLocaleDateString('pt-BR', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })
+                                : 'N/A'}
+                            </td>
+                            <td style={{ padding: '12px' }}>
+                              {withdrawal.attendantUser?.name || 'N/A'}
+                            </td>
+                            <td style={{ padding: '12px' }}>
+                              {withdrawal.items?.length > 0 
+                                ? withdrawal.items.map(item => `${item.item?.description || 'Item'} (${item.quantity})`).join(', ')
+                                : 'N/A'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
             </div>

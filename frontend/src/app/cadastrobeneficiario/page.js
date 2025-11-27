@@ -21,7 +21,8 @@ const CadastroBeneficiario = () => {
     bairro: "",
     numero: "",
     complemento: "",
-    pontoReferencia: ""
+    pontoReferencia: "",
+    withdrawalLimit: ""
   });
   const [fieldErrors, setFieldErrors] = useState({});
   const router = useRouter();
@@ -134,7 +135,8 @@ const CadastroBeneficiario = () => {
         bairro: "",
         numero: "",
         complemento: "",
-        pontoReferencia: ""
+        pontoReferencia: "",
+        withdrawalLimit: ""
       });
       
       showNotification("Beneficiário cadastrado com sucesso!", "success");
@@ -299,6 +301,27 @@ const CadastroBeneficiario = () => {
                 onChange={handleChange}
                 placeholder="Em frente ao parque"
               />
+            </div>
+
+            <hr className={styles.separador} />
+
+            <div className={styles.formGroup}>
+              <label htmlFor="withdrawalLimit"><b>Limite de Retiradas Mensais (opcional)</b></label>
+              <input
+                id="withdrawalLimit"
+                name="withdrawalLimit"
+                type="number"
+                min="0"
+                value={form.withdrawalLimit}
+                onChange={e => {
+                  const value = e.target.value === "" ? "" : parseInt(e.target.value) || 0;
+                  setForm({ ...form, withdrawalLimit: value });
+                }}
+                placeholder="Ex: 10"
+              />
+              <small style={{ color: '#666', fontSize: '0.9rem' }}>
+                Deixe em branco para usar o limite global do sistema
+              </small>
             </div>
 
             <button type="submit" disabled={loading}>

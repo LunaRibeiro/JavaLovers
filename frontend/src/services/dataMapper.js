@@ -47,9 +47,10 @@ export const mapItemFromBackend = (backendItem) => {
 export const mapUserToBackend = (frontendUser) => {
   return {
     name: frontendUser.nomeCompleto,
+    login: frontendUser.login,
     email: frontendUser.email,
     password: frontendUser.senha,
-    profileId: frontendUser.perfilId || 1, // Default profile
+    profileId: frontendUser.perfilId ? parseInt(frontendUser.perfilId) : 1, // Default profile
   };
 };
 
@@ -58,8 +59,10 @@ export const mapUserFromBackend = (backendUser) => {
     id: backendUser.userId,
     nomeCompleto: backendUser.name,
     email: backendUser.email,
+    login: backendUser.login || backendUser.email,
     perfil: backendUser.profile?.name || '',
     perfilId: backendUser.profile?.profileId || null,
+    status: backendUser.status || 'ACTIVE',
   };
 };
 
@@ -80,6 +83,7 @@ export const mapBeneficiaryToBackend = (frontendBeneficiary) => {
       pontoReferencia: frontendBeneficiary.pontoReferencia,
     }),
     beneficiaryStatus: 'PENDING', // Status padrão
+    withdrawalLimit: frontendBeneficiary.withdrawalLimit ? parseInt(frontendBeneficiary.withdrawalLimit) : null,
   };
 };
 
@@ -98,6 +102,8 @@ export const mapBeneficiaryFromBackend = (backendBeneficiary) => {
     nif: '', // Campo não disponível no backend atual
     telefoneCelular: backendBeneficiary.phone,
     email: '', // Campo não disponível no backend atual
+    withdrawalLimit: backendBeneficiary.withdrawalLimit || '',
+    currentWithdrawalsThisMonth: backendBeneficiary.currentWithdrawalsThisMonth || 0,
     endereco: socioeconomicData.endereco || '',
     bairro: socioeconomicData.bairro || '',
     numero: socioeconomicData.numero || '',

@@ -14,6 +14,11 @@ import com.javalovers.core.withdrawal.mapper.WithdrawalUpdateMapper;
 import com.javalovers.core.withdrawal.repository.WithdrawalRepository;
 import com.javalovers.core.withdrawal.specification.WithdrawalSpecification;
 import com.javalovers.core.withdrawallimit.service.WithdrawalLimitConfigService;
+import com.javalovers.core.beneficiary.service.BeneficiaryService;
+import com.javalovers.core.item.service.ItemService;
+import com.javalovers.core.item.domain.entity.Item;
+import com.javalovers.core.itemwithdrawn.domain.entity.ItemWithdrawn;
+import com.javalovers.core.itemwithdrawn.repository.ItemWithdrawnRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +41,9 @@ public class WithdrawalService {
     private final WithdrawalDTOMapper withdrawalDTOMapper;
     private final WithdrawalUpdateMapper withdrawalUpdateMapper;
     private final WithdrawalLimitConfigService limitConfigService;
+    private final BeneficiaryService beneficiaryService;
+    private final ItemService itemService;
+    private final ItemWithdrawnRepository itemWithdrawnRepository;
     private final EntityManager entityManager;
 
     public Withdrawal generateWithdrawal(WithdrawalFormDTO withdrawalFormDTO, Beneficiary beneficiary, AppUser attendantUser) {
@@ -43,31 +51,130 @@ public class WithdrawalService {
     }
 
     @Transactional
+    public void save (Withdrawal withdrawal, WithdrawalFormDTO withdrawalFormDTO) {
+        // Validar limite antes de processar itens
+        if (withdrawalFormDTO != null && withdrawalFormDTO.items() != null && !withdrawalFormDTO.items().isEmpty()) {
+            validateWithdrawalLimit(withdrawal, withdrawalFormDTO.items());
+        } else {
+            validateWithdrawalLimit(withdrawal);
+        }
+        
+        // Salvar withdrawal primeiro para ter o ID
+        withdrawalRepository.save(withdrawal);
+        
+        // Processar itens após salvar (precisa do ID do withdrawal)
+        if (withdrawalFormDTO != null && withdrawalFormDTO.items() != null && !withdrawalFormDTO.items().isEmpty()) {
+            processWithdrawalItems(withdrawal, withdrawalFormDTO.items());
+        }
+        
+        // Atualizar contador de retiradas do beneficiário
+        updateBeneficiaryWithdrawalCount(withdrawal, withdrawalFormDTO);
+    }
+
+    @Transactional
     public void save (Withdrawal withdrawal) {
         validateWithdrawalLimit(withdrawal);
         withdrawalRepository.save(withdrawal);
+        
+        // Atualizar contador de retiradas do beneficiário (sem DTO, calcula do withdrawal salvo)
+        updateBeneficiaryWithdrawalCount(withdrawal, null);
+    }
+
+    private void processWithdrawalItems(Withdrawal withdrawal, List<WithdrawalFormDTO.WithdrawalItemDTO> items) {
+        for (WithdrawalFormDTO.WithdrawalItemDTO itemDTO : items) {
+            Item item = itemService.getOrThrowException(itemDTO.itemId());
+            
+            // Validar estoque disponível
+            if (item.getStockQuantity() < itemDTO.quantity()) {
+                throw new IllegalStateException(
+                    String.format("Estoque insuficiente para o item '%s'. Disponível: %d, Solicitado: %d",
+                        item.getDescription(), item.getStockQuantity(), itemDTO.quantity())
+                );
+            }
+            
+            // Decrementar estoque
+            item.setStockQuantity(item.getStockQuantity() - itemDTO.quantity());
+            itemService.save(item);
+            
+            // Criar registro de item retirado
+            ItemWithdrawn itemWithdrawn = new ItemWithdrawn();
+            itemWithdrawn.setWithdrawal(withdrawal);
+            itemWithdrawn.setItem(item);
+            itemWithdrawn.setQuantity(itemDTO.quantity());
+            itemWithdrawnRepository.save(itemWithdrawn);
+        }
     }
 
     public void validateWithdrawalLimit(Withdrawal withdrawal) {
+        validateWithdrawalLimit(withdrawal, null);
+    }
+
+    public void validateWithdrawalLimit(Withdrawal withdrawal, List<WithdrawalFormDTO.WithdrawalItemDTO> items) {
         if (withdrawal.getBeneficiary() == null) {
             return;
         }
 
         Long beneficiaryId = withdrawal.getBeneficiary().getBeneficiaryId();
-        Integer monthlyLimit = limitConfigService.getActiveConfig().getMonthlyItemLimit();
+        var beneficiary = beneficiaryService.getOrThrowException(beneficiaryId);
+        
+        // Usar limite do beneficiário se configurado, senão usar limite global
+        Integer monthlyLimit = beneficiary.getWithdrawalLimit() != null 
+            ? beneficiary.getWithdrawalLimit() 
+            : limitConfigService.getActiveConfig().getMonthlyItemLimit();
 
-        // Calcular itens retirados no mês atual
-        int itemsWithdrawnThisMonth = calculateItemsWithdrawnThisMonth(beneficiaryId);
+        // Se não houver limite configurado, não validar
+        if (monthlyLimit == null || monthlyLimit <= 0) {
+            return;
+        }
+
+        // Usar contador do beneficiário ou calcular do banco
+        int currentWithdrawals = beneficiary.getCurrentWithdrawalsThisMonth() != null 
+            ? beneficiary.getCurrentWithdrawalsThisMonth() 
+            : calculateItemsWithdrawnThisMonth(beneficiaryId);
 
         // Calcular quantidade de itens nesta retirada
-        int itemsInThisWithdrawal = calculateItemsInWithdrawal(withdrawal);
+        int itemsInThisWithdrawal = 0;
+        if (items != null && !items.isEmpty()) {
+            itemsInThisWithdrawal = items.stream()
+                .mapToInt(WithdrawalFormDTO.WithdrawalItemDTO::quantity)
+                .sum();
+        } else {
+            itemsInThisWithdrawal = calculateItemsInWithdrawal(withdrawal);
+        }
 
-        if (itemsWithdrawnThisMonth + itemsInThisWithdrawal > monthlyLimit) {
+        if (currentWithdrawals + itemsInThisWithdrawal > monthlyLimit) {
             throw new IllegalStateException(
-                String.format("Limite mensal excedido. Itens retirados este mês: %d/%d. Tentativa de retirar mais %d itens.",
-                    itemsWithdrawnThisMonth, monthlyLimit, itemsInThisWithdrawal)
+                String.format("Limite mensal excedido. Retiradas este mês: %d/%d. Tentativa de retirar mais %d itens.",
+                    currentWithdrawals, monthlyLimit, itemsInThisWithdrawal)
             );
         }
+    }
+
+    private void updateBeneficiaryWithdrawalCount(Withdrawal withdrawal, WithdrawalFormDTO withdrawalFormDTO) {
+        if (withdrawal.getBeneficiary() == null) {
+            return;
+        }
+
+        Long beneficiaryId = withdrawal.getBeneficiary().getBeneficiaryId();
+        var beneficiary = beneficiaryService.getOrThrowException(beneficiaryId);
+        
+        // Calcular quantidade de itens nesta retirada
+        int itemsInThisWithdrawal = 0;
+        if (withdrawalFormDTO != null && withdrawalFormDTO.items() != null && !withdrawalFormDTO.items().isEmpty()) {
+            itemsInThisWithdrawal = withdrawalFormDTO.items().stream()
+                .mapToInt(WithdrawalFormDTO.WithdrawalItemDTO::quantity)
+                .sum();
+        } else {
+            itemsInThisWithdrawal = calculateItemsInWithdrawal(withdrawal);
+        }
+        
+        // Atualizar contador
+        int currentCount = beneficiary.getCurrentWithdrawalsThisMonth() != null 
+            ? beneficiary.getCurrentWithdrawalsThisMonth() 
+            : 0;
+        
+        beneficiary.setCurrentWithdrawalsThisMonth(currentCount + itemsInThisWithdrawal);
+        beneficiaryService.save(beneficiary);
     }
 
     private int calculateItemsWithdrawnThisMonth(Long beneficiaryId) {
@@ -116,6 +223,13 @@ public class WithdrawalService {
 
     public int getMonthlyLimit() {
         return limitConfigService.getActiveConfig().getMonthlyItemLimit();
+    }
+
+    public int getMonthlyLimit(Long beneficiaryId) {
+        var beneficiary = beneficiaryService.getOrThrowException(beneficiaryId);
+        return beneficiary.getWithdrawalLimit() != null
+            ? beneficiary.getWithdrawalLimit()
+            : limitConfigService.getActiveConfig().getMonthlyItemLimit();
     }
 
     public WithdrawalDTO generateWithdrawalDTO(Withdrawal withdrawal) {

@@ -14,6 +14,8 @@ public class BeneficiaryCreateMapper {
         beneficiary.setPhone(beneficiaryFormDTO.phone());
         beneficiary.setSocioeconomicData(beneficiaryFormDTO.socioeconomicData());
         beneficiary.setBeneficiaryStatus(beneficiaryFormDTO.beneficiaryStatus());
+        beneficiary.setWithdrawalLimit(beneficiaryFormDTO.withdrawalLimit());
+        beneficiary.setCurrentWithdrawalsThisMonth(0); // Inicializar com 0
 
         return beneficiary;
     }

@@ -6,14 +6,18 @@ import com.javalovers.core.card.dto.request.CardFormDTO;
 import com.javalovers.core.card.dto.response.CardDTO;
 import com.javalovers.core.card.entity.Card;
 import com.javalovers.core.card.service.CardService;
+import com.javalovers.core.card.service.CardPdfService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 
@@ -23,6 +27,7 @@ import java.util.List;
 public class CardController {
 
     private final CardService cardService;
+    private final CardPdfService cardPdfService;
 
     @GetMapping
     public ResponseEntity<Page<CardDTO>> listPaged(Pageable pageable, CardFilterDTO cardFilterDTO) {
@@ -83,12 +88,26 @@ public class CardController {
     }
 
     @PostMapping("/generate/{beneficiaryId}")
-    public ResponseEntity<CardDTO> generateCardForBeneficiary(@PathVariable Long beneficiaryId, UriComponentsBuilder uriComponentsBuilder) {
-        Card card = cardService.generateCardForBeneficiary(beneficiaryId);
-
-        URI uri = HttpUtils.createURI(uriComponentsBuilder, "card", card.getCardId());
-
-        return ResponseEntity.created(uri).body(cardService.generateCardDTO(card));
+    public ResponseEntity<byte[]> generateCardForBeneficiary(@PathVariable Long beneficiaryId) {
+        try {
+            // Gerar o cartão no banco de dados
+            Card card = cardService.generateCardForBeneficiary(beneficiaryId);
+            
+            // Gerar PDF do cartão
+            byte[] pdfBytes = cardPdfService.generateCardPdf(beneficiaryId);
+            
+            // Configurar headers para download do PDF
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDispositionFormData("attachment", "cartao_beneficiario_" + beneficiaryId + ".pdf");
+            headers.setContentLength(pdfBytes.length);
+            
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(pdfBytes);
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 }
 

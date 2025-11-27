@@ -25,6 +25,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.hibernate.Hibernate;
 
 import java.util.List;
 import java.util.Optional;
@@ -49,12 +50,27 @@ public class BeneficiaryService {
         beneficiaryRepository.save(beneficiary);
     }
 
+    @Transactional(readOnly = true)
     public BeneficiaryDTO generateBeneficiaryDTO(Beneficiary beneficiary) {
+        if (beneficiary != null && beneficiary.getApproverId() != null) {
+            Hibernate.initialize(beneficiary.getApproverId());
+            if (beneficiary.getApproverId().getProfile() != null) {
+                Hibernate.initialize(beneficiary.getApproverId().getProfile());
+            }
+        }
         return beneficiaryDTOMapper.convert(beneficiary);
     }
 
+    @Transactional(readOnly = true)
     public Beneficiary getOrNull(Long id){
-        return beneficiaryRepository.findById(id).orElse(null);
+        Beneficiary beneficiary = beneficiaryRepository.findById(id).orElse(null);
+        if (beneficiary != null && beneficiary.getApproverId() != null) {
+            Hibernate.initialize(beneficiary.getApproverId());
+            if (beneficiary.getApproverId().getProfile() != null) {
+                Hibernate.initialize(beneficiary.getApproverId().getProfile());
+            }
+        }
+        return beneficiary;
     }
 
     public void updateBeneficiary(Beneficiary beneficiary, BeneficiaryFormDTO beneficiaryFormDTO) {
@@ -102,11 +118,29 @@ public class BeneficiaryService {
         beneficiaryRepository.delete(beneficiary);
     }
 
+    @Transactional(readOnly = true)
     public List<Beneficiary> list(BeneficiaryFilterDTO beneficiaryFilterDTO) {
         Specification<Beneficiary> beneficiarySpecification = generateSpecification(beneficiaryFilterDTO);
         return beneficiaryRepository.findAll(beneficiarySpecification);
     }
 
+    @Transactional(readOnly = true)
+    public List<BeneficiaryDTO> listAsDTO(BeneficiaryFilterDTO beneficiaryFilterDTO) {
+        Specification<Beneficiary> beneficiarySpecification = generateSpecification(beneficiaryFilterDTO);
+        List<Beneficiary> beneficiaries = beneficiaryRepository.findAll(beneficiarySpecification);
+        // Force eager loading of approverId and its profile to avoid LazyInitializationException
+        beneficiaries.forEach(b -> {
+            if (b.getApproverId() != null) {
+                Hibernate.initialize(b.getApproverId());
+                if (b.getApproverId().getProfile() != null) {
+                    Hibernate.initialize(b.getApproverId().getProfile());
+                }
+            }
+        });
+        return beneficiaries.stream().map(beneficiaryDTOMapper::convert).toList();
+    }
+
+    @Transactional(readOnly = true)
     public Page<Beneficiary> list(Pageable pageable, BeneficiaryFilterDTO beneficiaryFilterDTO) {
         Specification<Beneficiary> beneficiarySpecification = generateSpecification(beneficiaryFilterDTO);
         return beneficiaryRepository.findAll(beneficiarySpecification, pageable);
@@ -129,6 +163,7 @@ public class BeneficiaryService {
                 .and(socioeconomicDataSpecification);
     }
 
+    @Transactional(readOnly = true)
     public Page<BeneficiaryDTO> generateBeneficiaryDTOPage(Page<Beneficiary> beneficiaryPage) {
         return beneficiaryPage.map(this::generateBeneficiaryDTO);
     }

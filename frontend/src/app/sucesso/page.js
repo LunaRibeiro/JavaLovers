@@ -12,7 +12,6 @@ function SucessoContent() {
   let destino = '/home';
   if (tipo === 'doadores') destino = '/cadastrodoador/lista';
   if (tipo === 'beneficiarios') destino = '/cadastrobeneficiario/lista';
-  if (tipo === 'voluntarios') destino = '/cadastrovoluntario/lista';
 
   return (
     <div style={{

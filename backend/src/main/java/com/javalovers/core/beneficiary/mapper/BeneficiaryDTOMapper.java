@@ -21,7 +21,9 @@ public class BeneficiaryDTOMapper {
                 beneficiary.getPhone(),
                 beneficiary.getSocioeconomicData(),
                 beneficiary.getBeneficiaryStatus(),
-                appUserDTOMapper.convert(beneficiary.getApproverId())
+                appUserDTOMapper.convert(beneficiary.getApproverId()),
+                beneficiary.getWithdrawalLimit(),
+                beneficiary.getCurrentWithdrawalsThisMonth()
         );
     }
 }

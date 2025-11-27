@@ -44,6 +44,8 @@ CREATE TABLE beneficiary (
      socioeconomic_data TEXT,
      beneficiary_status ENUM('PENDING', 'APPROVED', 'REJECTED') NOT NULL DEFAULT 'PENDING',
      approver_user_id INT,
+     withdrawal_limit INT DEFAULT NULL,
+     current_withdrawals_this_month INT DEFAULT 0,
 
      CONSTRAINT fk_beneficiary_approver FOREIGN KEY (approver_user_id) REFERENCES app_user(user_id)
          ON UPDATE RESTRICT ON DELETE SET NULL,

@@ -10,6 +10,8 @@ public record BeneficiaryDTO (
         String phone,
         String socioeconomicData,
         BeneficiaryStatus beneficiaryStatus,
-        AppUserDTO approverId
+        AppUserDTO approverId,
+        Integer withdrawalLimit,
+        Integer currentWithdrawalsThisMonth
 ){
 }
