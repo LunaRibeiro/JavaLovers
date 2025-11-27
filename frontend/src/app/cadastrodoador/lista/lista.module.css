@@ -47,6 +47,9 @@
   letter-spacing: 0.5px;
   position: relative;
   padding-bottom: 10px;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow: visible;
 }
 
 .decoracao {
@@ -108,6 +111,9 @@
   text-align: left;
   padding: 15px 20px;
   font-size: 0.95rem;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow: visible;
 }
 
 .beneficiariosTable th {
@@ -321,79 +327,156 @@
   }
 }
 
+/* Modal Styles */
 .modalOverlay {
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.35);
-  z-index: 1000;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 99999;
   display: flex;
   align-items: center;
   justify-content: center;
+  animation: fadeIn 0.2s ease-out;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
 }
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .modalContent {
   background: var(--color-bg-alt);
-  border-radius: 18px;
-  box-shadow: 0 8px 32px 0 rgba(25, 118, 210, 0.18);
-  padding: 6px 18px 6px 18px;
-  max-width: 700px;
-  width: 96vw;
-  border: 1.5px solid var(--color-border-light);
-  display: flex;
-  flex-direction: column;
-  position: relative;
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.3s ease-out;
+  border: 1px solid var(--color-border-light);
+  overflow-y: auto;
 }
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modalContent h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 24px 0;
+}
+
 .modalContent form {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px 18px;
-  align-items: start;
-  justify-items: stretch;
-  width: 100%;
-}
-@media (max-width: 900px) {
-  .modalContent {
-    padding: 10px 2vw;
-    max-width: 99vw;
-  }
-  .modalContent form {
-    grid-template-columns: 1fr;
-    gap: 10px 0;
-  }
-}
-.modalContent .formGroup,
-.modalContent .formGroupFullWidth {
-  width: 100%;
-  max-width: 320px;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  grid-column: auto;
 }
-.modalContent .formGroupFullWidth {
-  grid-column: 1 / -1;
+
+.formGroup {
+  margin-bottom: 20px;
 }
-.modalContent input {
+
+.formGroup label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: var(--color-text);
+  font-size: 0.95rem;
+}
+
+.formGroup input,
+.formGroup select {
   width: 100%;
-  max-width: 320px;
-  margin-bottom: 4px;
-  font-size: 0.98rem;
-  padding: 8px 10px;
+  padding: 12px;
+  border: 2px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.3s;
+  box-sizing: border-box;
 }
-.modalContent label {
-  font-size: 0.98rem;
+
+.formGroup input:focus,
+.formGroup select:focus {
+  outline: none;
+  border-color: var(--color-primary);
 }
-.modalContent .modalButtonGroup {
+
+.inputError {
+  border-color: var(--color-error) !important;
+}
+
+.errorText {
+  display: block;
+  color: var(--color-error);
+  font-size: 0.85rem;
+  margin-top: 4px;
+}
+
+.modalActions {
   display: flex;
-  gap: 18px;
-  justify-content: center;
-  width: 100%;
-  margin-top: 12px;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
 }
-.modalContent .modalButtonGroup button {
-  width: 180px;
-  min-width: 180px;
-  max-width: 180px;
-  height: 44px;
-  font-size: 1.08rem;
-  margin: 0;
+
+.cancelButton {
+  padding: 12px 24px;
+  border: 1.5px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancelButton:hover {
+  background: var(--color-bg);
+  border-color: var(--color-border-light);
+}
+
+.submitButton {
+  padding: 12px 28px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.submitButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  background: var(--color-primary-dark);
+}
+
+.submitButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

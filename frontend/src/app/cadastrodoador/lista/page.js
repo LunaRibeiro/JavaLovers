@@ -10,12 +10,27 @@ import { useApiList } from "../../../hooks/useApi";
 import { FaPlus } from "react-icons/fa";
 import { useNotification } from "../../../components/notifications/NotificationProvider";
 import ConfirmationModal from "../../../components/confirmation/ConfirmationModal";
-import { validateCPForCNPJ, validateEmail } from "../../../utils/validators";
+import { validateCPForCNPJ, validateEmail, validatePhone } from "../../../utils/validators";
+import { mapDonorToBackend } from "../../../services/dataMapper";
 
 export default function ListaDoadores() {
   const router = useRouter();
   const { showNotification } = useNotification();
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, action: null, message: "", title: "" });
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [formData, setFormData] = useState({
+    nomeCompleto: "",
+    telefoneCelular: "",
+    email: "",
+    cpf: "",
+    endereco: "",
+    bairro: "",
+    numero: "",
+    complemento: "",
+    pontoReferencia: ""
+  });
+  const [formErrors, setFormErrors] = useState({});
+  const [fieldErrors, setFieldErrors] = useState({});
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editForm, setEditForm] = useState(null); // objeto do doador a editar
   const [editError, setEditError] = useState("");
@@ -66,6 +81,118 @@ export default function ListaDoadores() {
     setConfirmModal({ isOpen: false, action: null, message: "", title: "" });
   };
 
+  const handleAdd = () => {
+    setFormData({
+      nomeCompleto: "",
+      telefoneCelular: "",
+      email: "",
+      cpf: "",
+      endereco: "",
+      bairro: "",
+      numero: "",
+      complemento: "",
+      pontoReferencia: ""
+    });
+    setFormErrors({});
+    setFieldErrors({});
+    setShowAddModal(true);
+  };
+
+  const validateField = (name, value) => {
+    let validation = { valid: true, message: "" };
+
+    switch (name) {
+      case "email":
+        validation = validateEmail(value);
+        break;
+      case "telefoneCelular":
+        validation = validatePhone(value);
+        break;
+      case "cpf":
+        if (value) {
+          validation = validateCPForCNPJ(value);
+        }
+        break;
+      default:
+        validation = { valid: true };
+    }
+
+    setFieldErrors(prev => ({
+      ...prev,
+      [name]: validation.valid ? "" : validation.message
+    }));
+
+    return validation.valid;
+  };
+
+  const handleFieldChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    
+    if (name === "email" || name === "telefoneCelular" || name === "cpf") {
+      if (value.length > 0 || fieldErrors[name] !== undefined) {
+        validateField(name, value);
+      }
+    }
+  };
+
+  const handleFieldBlur = (e) => {
+    validateField(e.target.name, e.target.value);
+  };
+
+  const validateForm = () => {
+    const errors = {};
+    if (!formData.nomeCompleto.trim()) errors.nomeCompleto = "Nome completo é obrigatório";
+    if (!formData.email.trim()) errors.email = "Email é obrigatório";
+    else if (!validateEmail(formData.email).valid) errors.email = validateEmail(formData.email).message;
+    if (!formData.telefoneCelular.trim()) errors.telefoneCelular = "Telefone é obrigatório";
+    else if (!validatePhone(formData.telefoneCelular).valid) errors.telefoneCelular = validatePhone(formData.telefoneCelular).message;
+    if (!formData.cpf.trim()) errors.cpf = "CPF/CNPJ é obrigatório";
+    else if (!validateCPForCNPJ(formData.cpf).valid) errors.cpf = validateCPForCNPJ(formData.cpf).message;
+    if (!formData.endereco.trim()) errors.endereco = "Endereço é obrigatório";
+    if (!formData.bairro.trim()) errors.bairro = "Bairro é obrigatório";
+    if (!formData.numero.trim()) errors.numero = "Número é obrigatório";
+    return errors;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+
+    try {
+      const cpfCnpjValidation = validateCPForCNPJ(formData.cpf);
+      const phoneValidation = validatePhone(formData.telefoneCelular);
+      
+      const donorData = mapDonorToBackend({
+        ...formData,
+        cpf: cpfCnpjValidation.cleaned
+      });
+
+      await apiService.createDonor(donorData);
+      showNotification("Doador cadastrado com sucesso!", "success");
+      setShowAddModal(false);
+      setFormData({
+        nomeCompleto: "",
+        telefoneCelular: "",
+        email: "",
+        cpf: "",
+        endereco: "",
+        bairro: "",
+        numero: "",
+        complemento: "",
+        pontoReferencia: ""
+      });
+      loadDataRaw();
+    } catch (err) {
+      console.error("Erro ao criar doador:", err);
+      showNotification(err.message || "Erro ao criar doador", "error");
+    }
+  };
+
   return (
     <div className={styles.containerGeral}>
       <MenuBar />
@@ -77,7 +204,7 @@ export default function ListaDoadores() {
           <div className={styles.actionsHeader}>
             <button
               className={styles.addButton}
-              onClick={() => router.push("/cadastrodoador")}
+              onClick={handleAdd}
               title="Adicionar Novo Doador"
             >
               <FaPlus />
@@ -138,6 +265,148 @@ export default function ListaDoadores() {
           </div>
         </div>
       </div>
+      {/* Modal de Adicionar Doador */}
+      {showAddModal && (
+        <div className={styles.modalOverlay} onClick={() => setShowAddModal(false)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <h2>Criar Novo Doador</h2>
+            <form onSubmit={handleSubmit}>
+              <div className={styles.formGroup}>
+                <label>Nome Completo *</label>
+                <input
+                  type="text"
+                  name="nomeCompleto"
+                  value={formData.nomeCompleto}
+                  onChange={handleFieldChange}
+                  className={formErrors.nomeCompleto ? styles.inputError : ''}
+                />
+                {formErrors.nomeCompleto && <span className={styles.errorText}>{formErrors.nomeCompleto}</span>}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Email *</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleFieldChange}
+                  onBlur={handleFieldBlur}
+                  className={formErrors.email || fieldErrors.email ? styles.inputError : ''}
+                />
+                {(formErrors.email || fieldErrors.email) && <span className={styles.errorText}>{formErrors.email || fieldErrors.email}</span>}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Telefone *</label>
+                <input
+                  type="text"
+                  name="telefoneCelular"
+                  value={formData.telefoneCelular}
+                  onChange={handleFieldChange}
+                  onBlur={handleFieldBlur}
+                  placeholder="(45) 9 9988-7766"
+                  className={formErrors.telefoneCelular || fieldErrors.telefoneCelular ? styles.inputError : ''}
+                />
+                {(formErrors.telefoneCelular || fieldErrors.telefoneCelular) && <span className={styles.errorText}>{formErrors.telefoneCelular || fieldErrors.telefoneCelular}</span>}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>CPF/CNPJ *</label>
+                <input
+                  type="text"
+                  name="cpf"
+                  value={formData.cpf}
+                  onChange={(e) => {
+                    const onlyNums = e.target.value.replace(/\D/g, "");
+                    setFormData({ ...formData, cpf: onlyNums });
+                    if (fieldErrors.cpf !== undefined || onlyNums.length > 0) {
+                      validateField("cpf", onlyNums);
+                    }
+                  }}
+                  onBlur={handleFieldBlur}
+                  placeholder="11122233355"
+                  className={formErrors.cpf || fieldErrors.cpf ? styles.inputError : ''}
+                />
+                {(formErrors.cpf || fieldErrors.cpf) && <span className={styles.errorText}>{formErrors.cpf || fieldErrors.cpf}</span>}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Endereço *</label>
+                <input
+                  type="text"
+                  name="endereco"
+                  value={formData.endereco}
+                  onChange={handleFieldChange}
+                  className={formErrors.endereco ? styles.inputError : ''}
+                />
+                {formErrors.endereco && <span className={styles.errorText}>{formErrors.endereco}</span>}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Número *</label>
+                <input
+                  type="text"
+                  name="numero"
+                  value={formData.numero}
+                  onChange={handleFieldChange}
+                  className={formErrors.numero ? styles.inputError : ''}
+                />
+                {formErrors.numero && <span className={styles.errorText}>{formErrors.numero}</span>}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Complemento</label>
+                <input
+                  type="text"
+                  name="complemento"
+                  value={formData.complemento}
+                  onChange={handleFieldChange}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Bairro *</label>
+                <input
+                  type="text"
+                  name="bairro"
+                  value={formData.bairro}
+                  onChange={handleFieldChange}
+                  className={formErrors.bairro ? styles.inputError : ''}
+                />
+                {formErrors.bairro && <span className={styles.errorText}>{formErrors.bairro}</span>}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Ponto de Referência</label>
+                <input
+                  type="text"
+                  name="pontoReferencia"
+                  value={formData.pontoReferencia}
+                  onChange={handleFieldChange}
+                />
+              </div>
+
+              <div className={styles.modalActions}>
+                <button
+                  type="button"
+                  className={styles.cancelButton}
+                  onClick={() => setShowAddModal(false)}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className={styles.submitButton}
+                  disabled={loading}
+                >
+                  {loading ? "Criando..." : "Criar Doador"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <ConfirmationModal
         isOpen={confirmModal.isOpen}
         onClose={() => setConfirmModal({ isOpen: false, action: null, message: "", title: "" })}
