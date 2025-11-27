@@ -16,19 +16,17 @@ import java.util.Arrays;
 @Configuration
 public class SecurityConfig {
 
-    @Bean
-    public CharacterEncodingFilter characterEncodingFilter() {
-        CharacterEncodingFilter filter = new CharacterEncodingFilter();
-        filter.setEncoding("UTF-8");
-        filter.setForceEncoding(true);
-        return filter;
+    private final CharacterEncodingFilter characterEncodingFilter;
+
+    public SecurityConfig(CharacterEncodingFilter characterEncodingFilter) {
+        this.characterEncodingFilter = characterEncodingFilter;
     }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .addFilterBefore(characterEncodingFilter(), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(characterEncodingFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .anyRequest().permitAll());
 
