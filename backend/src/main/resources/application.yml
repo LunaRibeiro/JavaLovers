@@ -21,6 +21,13 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
         format_sql: true
+        # Forçar atualização do metamodel
+        hbm2ddl:
+          auto: none
+        # Limpar cache de segunda instância (se houver)
+        cache:
+          use_second_level_cache: false
+          use_query_cache: false
 
   flyway:
     enabled: false
