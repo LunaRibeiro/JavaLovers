@@ -2,6 +2,7 @@ package com.javalovers.core.appuser.service;
 
 import com.javalovers.common.exception.EntityNotFoundException;
 import com.javalovers.core.appuser.domain.dto.request.AppUserFormDTO;
+import com.javalovers.core.appuser.domain.dto.request.AppUserUpdateDTO;
 import com.javalovers.core.appuser.domain.dto.response.AppUserDTO;
 import com.javalovers.core.appuser.domain.entity.AppUser;
 import com.javalovers.core.appuser.mapper.AppUserCreateMapper;
@@ -42,6 +43,10 @@ public class AppUserService {
 
     public void updateUser(AppUser user, AppUserFormDTO appUserFormDTO) {
         appUserUpdateMapper.update(user, appUserFormDTO);
+    }
+
+    public void updateUser(AppUser user, AppUserUpdateDTO appUserUpdateDTO) {
+        appUserUpdateMapper.update(user, appUserUpdateDTO);
     }
 
     public void delete(AppUser user) {
