@@ -15,11 +15,12 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "Sanem",
   description: "Doações Podem Mudar Vidas",
+  charset: "utf-8",
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="pt-BR">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <NotificationWrapper>
           {children}
