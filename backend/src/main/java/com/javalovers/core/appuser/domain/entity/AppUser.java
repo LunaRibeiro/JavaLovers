@@ -38,7 +38,6 @@ public class AppUser {
     @Column(name = "password_hash")
     private String passwordHash;
 
-    @NotBlank
     @Convert(converter = Status.StatusConverter.class)
     @Column(name = "status")
     private Status status;

@@ -4,6 +4,7 @@ import com.javalovers.core.profile.domain.entity.Profile;
 import com.javalovers.core.status.Status;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record AppUserUpdateDTO(
@@ -23,7 +24,10 @@ public record AppUserUpdateDTO(
                 @Size(min = 6, message = "Senha deve ter no mínimo 6 caracteres")
                 String password,
                 
+                @NotNull(message = "Status é obrigatório")
                 Status status,
+                
+                @NotNull(message = "Perfil é obrigatório")
                 Profile profile) {
 }
 
