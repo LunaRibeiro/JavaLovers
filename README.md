@@ -155,8 +155,11 @@ JavaLovers/
    - Atualize as credenciais do MySQL
 
 4. **Execute a aplicação**
+
    ```bash
-   mvn spring-boot:run
+   mvn clean package
+
+   java -jar target/javalovers-backend-1.0.0.jar
    ```
 
 #### Frontend
