@@ -7,15 +7,18 @@ import { useRouter } from 'next/navigation';
 import apiService from '../../services/api';
 import { mapItemFromBackend, mapItemToBackend } from '../../services/dataMapper';
 import { useApiList } from '../../hooks/useApi';
-import { FaPlus, FaPrint, FaTag } from 'react-icons/fa';
+import { FaPlus, FaPrint, FaTag, FaEdit, FaTrash } from 'react-icons/fa';
 import { useNotification } from '../../components/notifications/NotificationProvider';
 import ConfirmationModal from '../../components/confirmation/ConfirmationModal';
 
 export default function EstoquePage() {
   const { showNotification } = useNotification();
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [novoProduto, setNovoProduto] = useState({ nome: '', quantidade: '' });
+  const [editProduto, setEditProduto] = useState({ nome: '', quantidade: '' });
+  const [editingItem, setEditingItem] = useState(null);
   const router = useRouter();
 
   const {
@@ -79,7 +82,35 @@ export default function EstoquePage() {
   }
 
   function handleEditProduto(item) {
-    router.push(`/estoque/editar/${item.id}`);
+    setEditProduto({
+      nome: item.nome || '',
+      quantidade: item.quantidade || ''
+    });
+    setEditingItem(item);
+    setShowEditModal(true);
+  }
+
+  async function handleEditSubmit(e) {
+    e.preventDefault();
+    
+    if (!editingItem) return;
+
+    try {
+      const itemData = mapItemToBackend({
+        nome: editProduto.nome || '',
+        quantidade: Number(editProduto.quantidade) || 0
+      });
+      
+      await apiService.updateItem(editingItem.id, itemData);
+      await loadDataRaw();
+      
+      setEditProduto({ nome: '', quantidade: '' });
+      setShowEditModal(false);
+      setEditingItem(null);
+      showNotification("Produto atualizado com sucesso!", "success");
+    } catch (err) {
+      showNotification(err.message || "Erro ao atualizar produto", "error");
+    }
   }
 
   async function handleGenerateLabel(item) {
@@ -211,8 +242,9 @@ export default function EstoquePage() {
                           className={styles.editButton}
                           onClick={() => handleEditProduto(item)}
                           disabled={loading}
+                          title="Editar"
                         >
-                          Editar
+                          <FaEdit />
                         </button>
                         <button
                           className={styles.editButton}
@@ -221,15 +253,15 @@ export default function EstoquePage() {
                           title="Gerar Etiqueta"
                           style={{ background: '#2196F3', marginLeft: '5px' }}
                         >
-                          <FaTag style={{ marginRight: '5px' }} />
-                          Etiqueta
+                          <FaTag />
                         </button>
                         <button
                           className={styles.deleteButton}
                           onClick={() => openDeleteModal(item)}
                           disabled={loading}
+                          title="Excluir"
                         >
-                          Excluir
+                          <FaTrash />
                         </button>
                       </td>
                     </tr>
@@ -282,6 +314,57 @@ export default function EstoquePage() {
                   disabled={loading}
                 >
                   {loading ? "Adicionando..." : "Adicionar"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Editar */}
+      {showEditModal && editingItem && (
+        <div className={styles.modalOverlay} onClick={() => setShowEditModal(false)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <h2>Editar Produto</h2>
+            <form onSubmit={handleEditSubmit}>
+              <div className={styles.formGroup}>
+                <label htmlFor="editNome">Nome *</label>
+                <input 
+                  id="editNome"
+                  type="text"
+                  required 
+                  value={editProduto.nome} 
+                  onChange={e => setEditProduto({ ...editProduto, nome: e.target.value })} 
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label htmlFor="editQuantidade">Quantidade *</label>
+                <input 
+                  id="editQuantidade"
+                  type="number" 
+                  min={0} 
+                  required
+                  value={editProduto.quantidade} 
+                  onChange={e => setEditProduto({ ...editProduto, quantidade: e.target.value })} 
+                />
+              </div>
+              <div className={styles.modalActions}>
+                <button 
+                  type="button" 
+                  className={styles.cancelButton} 
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingItem(null);
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit" 
+                  className={styles.submitButton}
+                  disabled={loading}
+                >
+                  {loading ? "Salvando..." : "Salvar Alterações"}
                 </button>
               </div>
             </form>

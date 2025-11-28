@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import apiService from "../../../services/api";
 import { mapDonorFromBackend } from "../../../services/dataMapper";
 import { useApiList } from "../../../hooks/useApi";
-import { FaPlus } from "react-icons/fa";
+import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import { useNotification } from "../../../components/notifications/NotificationProvider";
 import ConfirmationModal from "../../../components/confirmation/ConfirmationModal";
 import { validateCPForCNPJ, validateEmail, validatePhone } from "../../../utils/validators";
@@ -31,10 +31,21 @@ export default function ListaDoadores() {
   });
   const [formErrors, setFormErrors] = useState({});
   const [fieldErrors, setFieldErrors] = useState({});
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [editForm, setEditForm] = useState(null); // objeto do doador a editar
-  const [editError, setEditError] = useState("");
-  const [editLoading, setEditLoading] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    nomeCompleto: "",
+    telefoneCelular: "",
+    email: "",
+    cpf: "",
+    endereco: "",
+    bairro: "",
+    numero: "",
+    complemento: "",
+    pontoReferencia: ""
+  });
+  const [editFormErrors, setEditFormErrors] = useState({});
+  const [editFieldErrors, setEditFieldErrors] = useState({});
+  const [editingDonor, setEditingDonor] = useState(null);
 
   const {
     data: doadoresRaw,
@@ -54,8 +65,29 @@ export default function ListaDoadores() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleEdit = (id) => {
-    router.push(`/cadastrodoador/editar/${id}`);
+  const handleEdit = async (id) => {
+    try {
+      const donor = await apiService.getDonor(id);
+      const mappedDonor = mapDonorFromBackend(donor);
+      setEditFormData({
+        nomeCompleto: mappedDonor.nomeCompleto || "",
+        telefoneCelular: mappedDonor.telefoneCelular || "",
+        email: mappedDonor.email || "",
+        cpf: mappedDonor.cpf || "",
+        endereco: mappedDonor.endereco || "",
+        bairro: mappedDonor.bairro || "",
+        numero: mappedDonor.numero || "",
+        complemento: mappedDonor.complemento || "",
+        pontoReferencia: mappedDonor.pontoReferencia || ""
+      });
+      setEditFormErrors({});
+      setEditFieldErrors({});
+      setEditingDonor(mappedDonor);
+      setShowEditModal(true);
+    } catch (err) {
+      console.error("Erro ao carregar doador:", err);
+      showNotification(err.message || "Erro ao carregar doador", "error");
+    }
   };
 
   const handleDelete = (id) => {
@@ -193,6 +225,91 @@ export default function ListaDoadores() {
     }
   };
 
+  const validateEditField = (name, value) => {
+    let validation = { valid: true, message: "" };
+
+    switch (name) {
+      case "email":
+        validation = validateEmail(value);
+        break;
+      case "telefoneCelular":
+        validation = validatePhone(value);
+        break;
+      case "cpf":
+        if (value) {
+          validation = validateCPForCNPJ(value);
+        }
+        break;
+      default:
+        validation = { valid: true };
+    }
+
+    setEditFieldErrors(prev => ({
+      ...prev,
+      [name]: validation.valid ? "" : validation.message
+    }));
+
+    return validation.valid;
+  };
+
+  const handleEditFieldChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData({ ...editFormData, [name]: value });
+    
+    if (name === "email" || name === "telefoneCelular" || name === "cpf") {
+      if (value.length > 0 || editFieldErrors[name] !== undefined) {
+        validateEditField(name, value);
+      }
+    }
+  };
+
+  const handleEditFieldBlur = (e) => {
+    validateEditField(e.target.name, e.target.value);
+  };
+
+  const validateEditForm = () => {
+    const errors = {};
+    if (!editFormData.nomeCompleto.trim()) errors.nomeCompleto = "Nome completo é obrigatório";
+    if (!editFormData.email.trim()) errors.email = "Email é obrigatório";
+    else if (!validateEmail(editFormData.email).valid) errors.email = validateEmail(editFormData.email).message;
+    if (!editFormData.telefoneCelular.trim()) errors.telefoneCelular = "Telefone é obrigatório";
+    else if (!validatePhone(editFormData.telefoneCelular).valid) errors.telefoneCelular = validatePhone(editFormData.telefoneCelular).message;
+    if (!editFormData.cpf.trim()) errors.cpf = "CPF/CNPJ é obrigatório";
+    else if (!validateCPForCNPJ(editFormData.cpf).valid) errors.cpf = validateCPForCNPJ(editFormData.cpf).message;
+    if (!editFormData.endereco.trim()) errors.endereco = "Endereço é obrigatório";
+    if (!editFormData.bairro.trim()) errors.bairro = "Bairro é obrigatório";
+    if (!editFormData.numero.trim()) errors.numero = "Número é obrigatório";
+    return errors;
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    const errors = validateEditForm();
+    if (Object.keys(errors).length > 0) {
+      setEditFormErrors(errors);
+      return;
+    }
+
+    try {
+      const cpfCnpjValidation = validateCPForCNPJ(editFormData.cpf);
+      const phoneValidation = validatePhone(editFormData.telefoneCelular);
+      
+      const donorData = mapDonorToBackend({
+        ...editFormData,
+        cpf: cpfCnpjValidation.cleaned
+      });
+
+      await apiService.updateDonor(editingDonor.id, donorData);
+      showNotification("Doador atualizado com sucesso!", "success");
+      setShowEditModal(false);
+      setEditingDonor(null);
+      loadDataRaw();
+    } catch (err) {
+      console.error("Erro ao atualizar doador:", err);
+      showNotification(err.message || "Erro ao atualizar doador", "error");
+    }
+  };
+
   return (
     <div className={styles.containerGeral}>
       <MenuBar />
@@ -246,15 +363,17 @@ export default function ListaDoadores() {
                           className={styles.editButton}
                           onClick={() => handleEdit(d.id)}
                           disabled={loading}
+                          title="Editar"
                         >
-                          Editar
+                          <FaEdit />
                         </button>
                         <button
                           className={styles.deleteButton}
                           onClick={() => handleDelete(d.id)}
                           disabled={loading}
+                          title="Excluir"
                         >
-                          Excluir
+                          <FaTrash />
                         </button>
                       </td>
                     </tr>
@@ -400,6 +519,151 @@ export default function ListaDoadores() {
                   disabled={loading}
                 >
                   {loading ? "Criando..." : "Criar Doador"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Editar Doador */}
+      {showEditModal && editingDonor && (
+        <div className={styles.modalOverlay} onClick={() => setShowEditModal(false)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <h2>Editar Doador</h2>
+            <form onSubmit={handleEditSubmit}>
+              <div className={styles.formGroup}>
+                <label>Nome Completo *</label>
+                <input
+                  type="text"
+                  name="nomeCompleto"
+                  value={editFormData.nomeCompleto}
+                  onChange={handleEditFieldChange}
+                  className={editFormErrors.nomeCompleto ? styles.inputError : ''}
+                />
+                {editFormErrors.nomeCompleto && <span className={styles.errorText}>{editFormErrors.nomeCompleto}</span>}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Email *</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={editFormData.email}
+                  onChange={handleEditFieldChange}
+                  onBlur={handleEditFieldBlur}
+                  className={editFormErrors.email || editFieldErrors.email ? styles.inputError : ''}
+                />
+                {(editFormErrors.email || editFieldErrors.email) && <span className={styles.errorText}>{editFormErrors.email || editFieldErrors.email}</span>}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Telefone *</label>
+                <input
+                  type="text"
+                  name="telefoneCelular"
+                  value={editFormData.telefoneCelular}
+                  onChange={handleEditFieldChange}
+                  onBlur={handleEditFieldBlur}
+                  placeholder="(45) 9 9988-7766"
+                  className={editFormErrors.telefoneCelular || editFieldErrors.telefoneCelular ? styles.inputError : ''}
+                />
+                {(editFormErrors.telefoneCelular || editFieldErrors.telefoneCelular) && <span className={styles.errorText}>{editFormErrors.telefoneCelular || editFieldErrors.telefoneCelular}</span>}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>CPF/CNPJ *</label>
+                <input
+                  type="text"
+                  name="cpf"
+                  value={editFormData.cpf}
+                  onChange={(e) => {
+                    const onlyNums = e.target.value.replace(/\D/g, "");
+                    setEditFormData({ ...editFormData, cpf: onlyNums });
+                    if (editFieldErrors.cpf !== undefined || onlyNums.length > 0) {
+                      validateEditField("cpf", onlyNums);
+                    }
+                  }}
+                  onBlur={handleEditFieldBlur}
+                  placeholder="11122233355"
+                  className={editFormErrors.cpf || editFieldErrors.cpf ? styles.inputError : ''}
+                />
+                {(editFormErrors.cpf || editFieldErrors.cpf) && <span className={styles.errorText}>{editFormErrors.cpf || editFieldErrors.cpf}</span>}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Endereço *</label>
+                <input
+                  type="text"
+                  name="endereco"
+                  value={editFormData.endereco}
+                  onChange={handleEditFieldChange}
+                  className={editFormErrors.endereco ? styles.inputError : ''}
+                />
+                {editFormErrors.endereco && <span className={styles.errorText}>{editFormErrors.endereco}</span>}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Número *</label>
+                <input
+                  type="text"
+                  name="numero"
+                  value={editFormData.numero}
+                  onChange={handleEditFieldChange}
+                  className={editFormErrors.numero ? styles.inputError : ''}
+                />
+                {editFormErrors.numero && <span className={styles.errorText}>{editFormErrors.numero}</span>}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Complemento</label>
+                <input
+                  type="text"
+                  name="complemento"
+                  value={editFormData.complemento}
+                  onChange={handleEditFieldChange}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Bairro *</label>
+                <input
+                  type="text"
+                  name="bairro"
+                  value={editFormData.bairro}
+                  onChange={handleEditFieldChange}
+                  className={editFormErrors.bairro ? styles.inputError : ''}
+                />
+                {editFormErrors.bairro && <span className={styles.errorText}>{editFormErrors.bairro}</span>}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Ponto de Referência</label>
+                <input
+                  type="text"
+                  name="pontoReferencia"
+                  value={editFormData.pontoReferencia}
+                  onChange={handleEditFieldChange}
+                />
+              </div>
+
+              <div className={styles.modalActions}>
+                <button
+                  type="button"
+                  className={styles.cancelButton}
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingDonor(null);
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className={styles.submitButton}
+                  disabled={loading}
+                >
+                  {loading ? "Salvando..." : "Salvar Alterações"}
                 </button>
               </div>
             </form>
