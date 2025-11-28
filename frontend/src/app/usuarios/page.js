@@ -19,6 +19,8 @@ export default function UsuariosPage() {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, action: null, message: "", title: "" });
   const [formData, setFormData] = useState({
     nomeCompleto: '',
@@ -27,13 +29,70 @@ export default function UsuariosPage() {
     senha: '',
     perfilId: ''
   });
+  const [editFormData, setEditFormData] = useState({
+    nomeCompleto: '',
+    email: '',
+    login: '',
+    senha: '',
+    perfilId: '',
+    status: 'ACTIVE'
+  });
   const [formErrors, setFormErrors] = useState({});
+  const [editFormErrors, setEditFormErrors] = useState({});
+  const [changePassword, setChangePassword] = useState(false);
+  const [allowNonAdminEdit, setAllowNonAdminEdit] = useState(false);
 
   useEffect(() => {
-    checkAdmin();
-    loadUsers();
-    loadProfiles();
+    // Verificar se deve permitir edição de não-admin (editando a si mesmo)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('editSelf') === 'true') {
+      setAllowNonAdminEdit(true);
+    }
+    
+    const initialize = async () => {
+      await checkAdmin();
+      await loadUsers();
+      await loadProfiles();
+      
+      // Verificar se deve abrir o modal de edição do próprio usuário
+      if (urlParams.get('editSelf') === 'true') {
+        handleEditSelf();
+        // Limpar o parâmetro da URL
+        window.history.replaceState({}, '', '/usuarios');
+      }
+    };
+    
+    initialize();
   }, []);
+
+  const handleEditSelf = async () => {
+    try {
+      const user = authService.getUser();
+      if (!user || !user.id) {
+        showNotification("Erro ao carregar dados do usuário", "error");
+        return;
+      }
+      
+      // Carregar dados do usuário atual
+      const userData = await apiService.getUser(user.id);
+      const mappedUser = mapUserFromBackend(userData);
+      setEditFormData({
+        nomeCompleto: mappedUser.nomeCompleto || '',
+        email: mappedUser.email || '',
+        login: mappedUser.login || '',
+        senha: '',
+        perfilId: mappedUser.perfilId?.toString() || '',
+        status: mappedUser.status || 'ACTIVE'
+      });
+      setEditFormErrors({});
+      setChangePassword(false);
+      setEditingUser(mappedUser);
+      setShowEditModal(true);
+    } catch (err) {
+      console.error("Erro ao carregar usuário:", err);
+      showNotification(err.message || "Erro ao carregar dados do usuário", "error");
+    }
+  };
 
   const checkAdmin = async () => {
     const user = authService.getUser();
@@ -86,10 +145,27 @@ export default function UsuariosPage() {
     }
   };
 
+  const translateProfileName = (name) => {
+    const nameLower = (name || '').toLowerCase();
+    if (nameLower.includes('admin') || nameLower.includes('administrator')) {
+      return 'Administrador';
+    }
+    if (nameLower.includes('attendant') || nameLower.includes('atendente')) {
+      return 'Atendente';
+    }
+    return name; // Retorna o nome original se não for reconhecido
+  };
+
   const loadProfiles = async () => {
     try {
       const data = await apiService.getProfiles();
-      setProfiles(data || []);
+      // Filtrar apenas Administrator e Attendant
+      const filteredProfiles = (data || []).filter(profile => {
+        const nameLower = (profile.name || '').toLowerCase();
+        return nameLower.includes('admin') || nameLower.includes('administrator') || 
+               nameLower.includes('attendant') || nameLower.includes('atendente');
+      });
+      setProfiles(filteredProfiles);
     } catch (err) {
       console.error("Erro ao carregar perfis:", err);
     }
@@ -111,8 +187,30 @@ export default function UsuariosPage() {
     setShowAddModal(true);
   };
 
-  const handleEdit = (id) => {
-    router.push(`/usuarios/editar/${id}`);
+  const handleEdit = async (id) => {
+    if (!isAdmin) {
+      showNotification("Apenas administradores podem editar usuários", "error");
+      return;
+    }
+    try {
+      const userData = await apiService.getUser(id);
+      const mappedUser = mapUserFromBackend(userData);
+      setEditFormData({
+        nomeCompleto: mappedUser.nomeCompleto || '',
+        email: mappedUser.email || '',
+        login: mappedUser.login || '',
+        senha: '',
+        perfilId: mappedUser.perfilId?.toString() || '',
+        status: mappedUser.status || 'ACTIVE'
+      });
+      setEditFormErrors({});
+      setChangePassword(false);
+      setEditingUser(mappedUser);
+      setShowEditModal(true);
+    } catch (err) {
+      console.error("Erro ao carregar usuário:", err);
+      showNotification(err.message || "Erro ao carregar dados do usuário", "error");
+    }
   };
 
   const handleDelete = (id) => {
@@ -150,6 +248,20 @@ export default function UsuariosPage() {
     if (!formData.senha.trim()) errors.senha = "Senha é obrigatória";
     else if (formData.senha.length < 6) errors.senha = "Senha deve ter pelo menos 6 caracteres";
     if (!formData.perfilId) errors.perfilId = "Perfil é obrigatório";
+    return errors;
+  };
+
+  const validateEditForm = () => {
+    const errors = {};
+    if (!editFormData.nomeCompleto.trim()) errors.nomeCompleto = "Nome é obrigatório";
+    if (!editFormData.email.trim()) errors.email = "Email é obrigatório";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editFormData.email)) errors.email = "Email inválido";
+    if (!editFormData.login.trim()) errors.login = "Login é obrigatório";
+    if (changePassword) {
+      if (!editFormData.senha.trim()) errors.senha = "Senha é obrigatória";
+      else if (editFormData.senha.length < 6) errors.senha = "Senha deve ter pelo menos 6 caracteres";
+    }
+    if (!editFormData.perfilId) errors.perfilId = "Perfil é obrigatório";
     return errors;
   };
 
@@ -202,7 +314,62 @@ export default function UsuariosPage() {
     }
   };
 
-  if (!isAdmin) {
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    // Verificar se está editando a si mesmo ou se é admin
+    const currentUser = authService.getUser();
+    const isEditingSelf = currentUser && editingUser && currentUser.id === editingUser.id;
+    
+    if (!isAdmin && !isEditingSelf) {
+      showNotification("Apenas administradores podem editar outros usuários", "error");
+      return;
+    }
+
+    const errors = validateEditForm();
+    if (Object.keys(errors).length > 0) {
+      setEditFormErrors(errors);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      // Buscar o perfil completo pelo ID
+      const selectedProfile = profiles.find(p => p.profileId === parseInt(editFormData.perfilId));
+      if (!selectedProfile) {
+        showNotification("Perfil selecionado não encontrado", "error");
+        return;
+      }
+
+      // Preparar dados para o backend
+      const userData = {
+        name: editFormData.nomeCompleto,
+        login: editFormData.login,
+        email: editFormData.email,
+        password: changePassword ? editFormData.senha : null, // null se não estiver mudando
+        status: editFormData.status,
+        profile: {
+          profileId: selectedProfile.profileId,
+          name: selectedProfile.name,
+          description: selectedProfile.description || null
+        }
+      };
+
+      await apiService.updateUser(editingUser.id, userData);
+      showNotification("Usuário atualizado com sucesso!", "success");
+      setShowEditModal(false);
+      setEditingUser(null);
+      setChangePassword(false);
+      loadUsers();
+    } catch (err) {
+      console.error("Erro ao atualizar usuário:", err);
+      showNotification(err.message || "Erro ao atualizar usuário", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isAdmin && !allowNonAdminEdit) {
     return (
       <div className={styles.containerGeral}>
         <Navigation />
@@ -225,15 +392,18 @@ export default function UsuariosPage() {
         <div className={styles.listContainer}>
           <h1 className={styles.titulo}>Usuários do Sistema</h1>
           <div className={styles.decoracao}></div>
-          <div className={styles.actionsHeader}>
-            <button
-              className={styles.addButton}
-              onClick={handleAdd}
-              title="Adicionar Novo Usuário"
-            >
-              <FaPlus />
-            </button>
-          </div>
+          {isAdmin && (
+            <div className={styles.actionsHeader}>
+              <button
+                className={styles.addButton}
+                onClick={handleAdd}
+                title="Adicionar Novo Usuário"
+              >
+                <FaPlus />
+              </button>
+            </div>
+          )}
+          {isAdmin && (
           <div className={styles.tableWrapper}>
             <table className={styles.beneficiariosTable}>
               <thead>
@@ -260,7 +430,7 @@ export default function UsuariosPage() {
                       <td>{user.nomeCompleto}</td>
                       <td>{user.email}</td>
                       <td>{user.login || user.email || 'N/A'}</td>
-                      <td>{user.perfil || 'N/A'}</td>
+                      <td>{translateProfileName(user.perfil) || 'N/A'}</td>
                       <td>
                         <div className={styles.actionButtons}>
                           <button
@@ -285,6 +455,7 @@ export default function UsuariosPage() {
               </tbody>
             </table>
           </div>
+          )}
         </div>
       </div>
 
@@ -348,7 +519,7 @@ export default function UsuariosPage() {
                   <option value="">Selecione um perfil</option>
                   {profiles.map((profile) => (
                     <option key={profile.profileId} value={profile.profileId}>
-                      {profile.name}
+                      {translateProfileName(profile.name)}
                     </option>
                   ))}
                 </select>
@@ -369,6 +540,123 @@ export default function UsuariosPage() {
                   disabled={loading}
                 >
                   {loading ? "Criando..." : "Criar Usuário"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Editar Usuário */}
+      {showEditModal && editingUser && (
+        <div className={styles.modalOverlay} onClick={() => setShowEditModal(false)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <h2>Editar Usuário</h2>
+            <form onSubmit={handleEditSubmit}>
+              <div className={styles.formGroup}>
+                <label>Nome Completo *</label>
+                <input
+                  type="text"
+                  value={editFormData.nomeCompleto}
+                  onChange={(e) => setEditFormData({ ...editFormData, nomeCompleto: e.target.value })}
+                  className={editFormErrors.nomeCompleto ? styles.inputError : ''}
+                />
+                {editFormErrors.nomeCompleto && <span className={styles.errorText}>{editFormErrors.nomeCompleto}</span>}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Email *</label>
+                <input
+                  type="email"
+                  value={editFormData.email}
+                  onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                  className={editFormErrors.email ? styles.inputError : ''}
+                />
+                {editFormErrors.email && <span className={styles.errorText}>{editFormErrors.email}</span>}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Login *</label>
+                <input
+                  type="text"
+                  value={editFormData.login}
+                  onChange={(e) => setEditFormData({ ...editFormData, login: e.target.value })}
+                  className={editFormErrors.login ? styles.inputError : ''}
+                />
+                {editFormErrors.login && <span className={styles.errorText}>{editFormErrors.login}</span>}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={changePassword}
+                    onChange={(e) => setChangePassword(e.target.checked)}
+                    style={{ marginRight: '8px' }}
+                  />
+                  Alterar senha
+                </label>
+                {changePassword && (
+                  <>
+                    <input
+                      type="password"
+                      value={editFormData.senha}
+                      onChange={(e) => setEditFormData({ ...editFormData, senha: e.target.value })}
+                      className={editFormErrors.senha ? styles.inputError : ''}
+                      placeholder="Nova senha (mínimo 6 caracteres)"
+                      style={{ marginTop: '8px', width: '100%', padding: '12px', border: '2px solid var(--color-border)', borderRadius: '8px', boxSizing: 'border-box' }}
+                    />
+                    {editFormErrors.senha && <span className={styles.errorText}>{editFormErrors.senha}</span>}
+                  </>
+                )}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Perfil *</label>
+                <select
+                  value={editFormData.perfilId}
+                  onChange={(e) => setEditFormData({ ...editFormData, perfilId: e.target.value })}
+                  className={editFormErrors.perfilId ? styles.inputError : ''}
+                >
+                  <option value="">Selecione um perfil</option>
+                  {profiles.map((profile) => (
+                    <option key={profile.profileId} value={profile.profileId}>
+                      {translateProfileName(profile.name)}
+                    </option>
+                  ))}
+                </select>
+                {editFormErrors.perfilId && <span className={styles.errorText}>{editFormErrors.perfilId}</span>}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Status *</label>
+                <select
+                  value={editFormData.status}
+                  onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
+                >
+                  <option value="ACTIVE">Ativo</option>
+                  <option value="INACTIVE">Inativo</option>
+                </select>
+              </div>
+
+              <div className={styles.modalActions}>
+                <button
+                  type="button"
+                  className={styles.cancelButton}
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingUser(null);
+                    setChangePassword(false);
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className={styles.submitButton}
+                  disabled={loading}
+                >
+                  {loading ? "Salvando..." : "Salvar Alterações"}
                 </button>
               </div>
             </form>
