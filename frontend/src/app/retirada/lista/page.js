@@ -48,7 +48,16 @@ export default function ListaRetiradasPage() {
     try {
       setLoading(true);
       const data = await apiService.getWithdrawals();
-      setWithdrawals(Array.isArray(data) ? data : []);
+      const withdrawalsArray = Array.isArray(data) ? data : [];
+      
+      // Ordenar do mais recente para o mais antigo por data de retirada
+      const sortedWithdrawals = withdrawalsArray.sort((a, b) => {
+        const dateA = a.withdrawalDate ? new Date(a.withdrawalDate).getTime() : 0;
+        const dateB = b.withdrawalDate ? new Date(b.withdrawalDate).getTime() : 0;
+        return dateB - dateA; // Ordem decrescente (mais recente primeiro)
+      });
+      
+      setWithdrawals(sortedWithdrawals);
     } catch (err) {
       console.error("Erro ao carregar retiradas:", err);
       showNotification(err.message || "Erro ao carregar retiradas", "error");
