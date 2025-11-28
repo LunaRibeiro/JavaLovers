@@ -36,10 +36,18 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+        // Permitir todas as origens usando padrão (funciona com allowCredentials)
         configuration.setAllowedOriginPatterns(Arrays.asList("*"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        // Incluir todos os métodos HTTP necessários, incluindo PATCH
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"));
+        // Permitir todos os headers
         configuration.setAllowedHeaders(Arrays.asList("*"));
+        // Permitir credenciais (cookies, authorization headers, etc)
         configuration.setAllowCredentials(true);
+        // Expor headers customizados
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Total-Count"));
+        // Cache da configuração de preflight por 1 hora
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
