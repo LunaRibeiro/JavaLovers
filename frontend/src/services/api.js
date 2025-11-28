@@ -1,5 +1,6 @@
 // API Service para comunicação com o backend
 import { API_CONFIG } from '../config/api';
+import authService from './authService';
 
 class ApiService {
   constructor() {
@@ -9,9 +10,15 @@ class ApiService {
   // Método genérico para fazer requisições
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
+    
+    // Obter token de autenticação
+    const token = authService.getToken();
+    const authHeader = token ? { Authorization: token } : {};
+    
     const config = {
       headers: {
         'Content-Type': 'application/json',
+        ...authHeader,
         ...options.headers,
       },
       ...options,
@@ -33,6 +40,14 @@ class ApiService {
       return await response.json();
     } catch (error) {
       console.error(`API Error [${endpoint}]:`, error);
+      
+      // Melhorar mensagem de erro para "Failed to fetch"
+      if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
+        const errorMessage = `Não foi possível conectar ao servidor. Verifique se o backend está rodando em ${this.baseURL}`;
+        console.error(errorMessage);
+        throw new Error(errorMessage);
+      }
+      
       throw error;
     }
   }
@@ -97,6 +112,10 @@ class ApiService {
     return this.request(`/item/${id}`, {
       method: 'DELETE',
     });
+  }
+
+  async generateItemLabel(id) {
+    return this.request(`/item/${id}/label`);
   }
 
   // Métodos para Usuários
@@ -221,6 +240,45 @@ class ApiService {
     });
   }
 
+  async getCardByBeneficiaryId(beneficiaryId) {
+    const cards = await this.getCards({ beneficiaryId });
+    return cards && cards.length > 0 ? cards[0] : null;
+  }
+
+  async generateCardForBeneficiary(beneficiaryId) {
+    const url = `${this.baseURL}/card/generate/${beneficiaryId}`;
+    const token = authService.getToken();
+    const authHeader = token ? { Authorization: token } : {};
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeader,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    }
+
+    // Obter o blob do PDF
+    const blob = await response.blob();
+    
+    // Criar URL do blob e fazer download
+    const blobUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = `cartao_beneficiario_${beneficiaryId}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(blobUrl);
+    
+    return { success: true };
+  }
+
   // Métodos para Beneficiários
   async getBeneficiaries(filters = {}) {
     const queryParams = new URLSearchParams(filters).toString();
@@ -252,21 +310,57 @@ class ApiService {
     });
   }
 
-  async approveBeneficiary(id, status) {
-    // Primeiro, buscar o beneficiário atual para obter todos os dados
-    const beneficiary = await this.getBeneficiary(id);
+  async approveBeneficiary(id, status, approverUserId) {
+    const endpoint = status === 'APPROVED' 
+      ? `/beneficiary/${id}/approve?approverUserId=${approverUserId}`
+      : `/beneficiary/${id}/reject?approverUserId=${approverUserId}`;
     
-    // Atualizar o status e manter os outros dados
-    // O backend espera BeneficiaryFormDTO que tem: fullName, cpf, phone, socioeconomicData, beneficiaryStatus
-    const updateData = {
-      fullName: beneficiary.fullName,
-      cpf: beneficiary.cpf,
-      phone: beneficiary.phone || '',
-      socioeconomicData: beneficiary.socioeconomicData || '',
-      beneficiaryStatus: status
-    };
-    
-    return this.updateBeneficiary(id, updateData);
+    return this.request(endpoint, {
+      method: 'PATCH',
+    });
+  }
+
+  // Métodos para Configuração de Limites de Retirada
+  async getWithdrawalLimitConfig() {
+    return this.request('/withdrawal-limit-config/active');
+  }
+
+  async updateWithdrawalLimitConfig(id, configData) {
+    return this.request(`/withdrawal-limit-config/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(configData),
+    });
+  }
+
+  async getWithdrawalLimitInfo(beneficiaryId) {
+    return this.request(`/withdrawal/beneficiary/${beneficiaryId}/limit-info`);
+  }
+
+  async getBeneficiaryWithdrawals(beneficiaryId) {
+    return this.request(`/beneficiary/${beneficiaryId}/withdrawals`);
+  }
+
+  async getWithdrawals(filters = {}) {
+    const queryParams = new URLSearchParams(filters).toString();
+    const endpoint = `/withdrawal/all${queryParams ? `?${queryParams}` : ''}`;
+    return this.request(endpoint);
+  }
+
+  async getWithdrawal(id) {
+    return this.request(`/withdrawal/${id}`);
+  }
+
+  async createWithdrawal(withdrawalData) {
+    return this.request('/withdrawal', {
+      method: 'POST',
+      body: JSON.stringify(withdrawalData),
+    });
+  }
+
+  async deleteWithdrawal(id) {
+    return this.request(`/withdrawal/${id}`, {
+      method: 'DELETE',
+    });
   }
 }
 

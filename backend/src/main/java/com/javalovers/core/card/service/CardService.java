@@ -16,8 +16,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -79,5 +82,36 @@ public class CardService {
 
     public List<CardDTO> generateCardDTOList(List<Card> cardList) {
         return cardList.stream().map(cardDTOMapper::convert).toList();
+    }
+
+    @Transactional
+    public Card generateCardForBeneficiary(Long beneficiaryId) {
+        // Verificar se já existe cartão para este beneficiário
+        Card existingCard = cardRepository.findByBeneficiaryId(beneficiaryId).orElse(null);
+        if (existingCard != null) {
+            throw new IllegalStateException("Beneficiário já possui um cartão");
+        }
+
+        // Gerar número único do cartão
+        String uniqueNumber = generateUniqueCardNumber();
+        
+        // Garantir que o número seja único
+        while (cardRepository.findByUniqueNumber(uniqueNumber).isPresent()) {
+            uniqueNumber = generateUniqueCardNumber();
+        }
+
+        Card card = new Card();
+        card.setUniqueNumber(uniqueNumber);
+        card.setBeneficiaryId(beneficiaryId);
+        card.setIssueDate(new Date());
+
+        return cardRepository.save(card);
+    }
+
+    private String generateUniqueCardNumber() {
+        // Gera um número único baseado em UUID (sem hífens) e timestamp
+        String uuidPart = UUID.randomUUID().toString().replace("-", "").substring(0, 12).toUpperCase();
+        String timestampPart = String.valueOf(System.currentTimeMillis()).substring(7);
+        return "CARD-" + uuidPart + timestampPart;
     }
 }

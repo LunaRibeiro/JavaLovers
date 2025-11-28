@@ -3,7 +3,6 @@ package com.javalovers.core.itemwithdrawn.mapper;
 import com.javalovers.core.item.mapper.ItemDTOMapper;
 import com.javalovers.core.itemwithdrawn.domain.dto.response.ItemWithdrawnDTO;
 import com.javalovers.core.itemwithdrawn.domain.entity.ItemWithdrawn;
-import com.javalovers.core.withdrawal.mapper.WithdrawalDTOMapper;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -11,7 +10,6 @@ import org.springframework.stereotype.Service;
 @AllArgsConstructor
 public class ItemWithdrawnDTOMapper {
 
-    private final WithdrawalDTOMapper withdrawalDTOMapper;
     private final ItemDTOMapper itemDTOMapper;
 
     public ItemWithdrawnDTO convert(ItemWithdrawn itemWithdrawn) {
@@ -19,7 +17,6 @@ public class ItemWithdrawnDTOMapper {
 
         return new ItemWithdrawnDTO(
                 itemWithdrawn.getItemWithdrawnId(),
-                withdrawalDTOMapper.convert(itemWithdrawn.getWithdrawal()),
                 itemDTOMapper.convert(itemWithdrawn.getItem()),
                 itemWithdrawn.getQuantity()
         );

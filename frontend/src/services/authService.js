@@ -76,7 +76,8 @@ class AuthService {
         id: data.userId,
         name: data.name,
         email: data.email,
-        role: data.role
+        role: data.role, // Nome do perfil (ex: "Administrador", "Atendente")
+        perfilId: null // Será preenchido quando buscar dados completos do usuário
       };
 
       this.setAuthData(data.token, user);

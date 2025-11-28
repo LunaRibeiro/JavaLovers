@@ -1,6 +1,6 @@
 package com.javalovers.core.appuser.domain.dto.response;
 
-import com.javalovers.core.profile.domain.entity.Profile;
+import com.javalovers.core.profile.domain.dto.response.ProfileDTO;
 import com.javalovers.core.status.Status;
 
 public record AppUserDTO(
@@ -9,5 +9,5 @@ public record AppUserDTO(
                 String login,
                 String email,
                 Status status,
-                Profile profile) {
+                ProfileDTO profile) {
 }

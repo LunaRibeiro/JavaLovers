@@ -43,8 +43,14 @@ public class Beneficiary {
     @Column(name = "beneficiary_status")
     private BeneficiaryStatus beneficiaryStatus;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "approver_user_id")
     private AppUser approverId;
+
+    @Column(name = "withdrawal_limit")
+    private Integer withdrawalLimit;
+
+    @Column(name = "current_withdrawals_this_month")
+    private Integer currentWithdrawalsThisMonth;
 
 }

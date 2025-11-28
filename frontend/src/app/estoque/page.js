@@ -7,15 +7,18 @@ import { useRouter } from 'next/navigation';
 import apiService from '../../services/api';
 import { mapItemFromBackend, mapItemToBackend } from '../../services/dataMapper';
 import { useApiList } from '../../hooks/useApi';
-import { FaPlus } from 'react-icons/fa';
+import { FaPlus, FaPrint, FaTag, FaEdit, FaTrash } from 'react-icons/fa';
 import { useNotification } from '../../components/notifications/NotificationProvider';
 import ConfirmationModal from '../../components/confirmation/ConfirmationModal';
 
 export default function EstoquePage() {
   const { showNotification } = useNotification();
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
-  const [novoProduto, setNovoProduto] = useState({ nome: '', categoria: '', tamanho: '', quantidade: '' });
+  const [novoProduto, setNovoProduto] = useState({ nome: '', quantidade: '' });
+  const [editProduto, setEditProduto] = useState({ nome: '', quantidade: '' });
+  const [editingItem, setEditingItem] = useState(null);
   const router = useRouter();
 
   const {
@@ -41,16 +44,19 @@ export default function EstoquePage() {
 
   async function handleAddProduto(e) {
     e.preventDefault();
+    
     try {
-      const itemData = mapItemToBackend({
-        ...novoProduto,
-        quantidade: Number(novoProduto.quantidade)
-      });
+      // Preparar dados diretamente no formato esperado pelo backend
+      const itemData = {
+        description: novoProduto.nome || '',
+        stockQuantity: Number(novoProduto.quantidade) || 0,
+        tagCode: null // Será gerado pelo backend se necessário
+      };
       
       await apiService.createItem(itemData);
       await loadDataRaw();
       
-      setNovoProduto({ nome: '', categoria: '', tamanho: '', quantidade: '' });
+      setNovoProduto({ nome: '', quantidade: '' });
       setShowAddModal(false);
       showNotification("Produto adicionado com sucesso!", "success");
     } catch (err) {
@@ -76,7 +82,111 @@ export default function EstoquePage() {
   }
 
   function handleEditProduto(item) {
-    router.push(`/estoque/editar/${item.id}`);
+    setEditProduto({
+      nome: item.nome || '',
+      quantidade: item.quantidade || ''
+    });
+    setEditingItem(item);
+    setShowEditModal(true);
+  }
+
+  async function handleEditSubmit(e) {
+    e.preventDefault();
+    
+    if (!editingItem) return;
+
+    try {
+      const itemData = mapItemToBackend({
+        nome: editProduto.nome || '',
+        quantidade: Number(editProduto.quantidade) || 0
+      });
+      
+      await apiService.updateItem(editingItem.id, itemData);
+      await loadDataRaw();
+      
+      setEditProduto({ nome: '', quantidade: '' });
+      setShowEditModal(false);
+      setEditingItem(null);
+      showNotification("Produto atualizado com sucesso!", "success");
+    } catch (err) {
+      showNotification(err.message || "Erro ao atualizar produto", "error");
+    }
+  }
+
+  async function handleGenerateLabel(item) {
+    try {
+      const labelData = await apiService.generateItemLabel(item.id);
+      printLabel(labelData);
+      showNotification("Etiqueta gerada com sucesso!", "success");
+    } catch (err) {
+      showNotification(err.message || "Erro ao gerar etiqueta", "error");
+    }
+  }
+
+  function printLabel(labelData) {
+    const printWindow = window.open('', '_blank');
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Etiqueta - ${labelData.description}</title>
+          <style>
+            @media print {
+              @page { size: 4in 2in; margin: 0.2in; }
+              body { margin: 0; padding: 0; }
+            }
+            body { 
+              font-family: Arial, sans-serif; 
+              padding: 10px; 
+              margin: 0;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+            }
+            .label-container {
+              border: 2px solid #000;
+              padding: 15px;
+              width: 100%;
+              max-width: 350px;
+              text-align: center;
+            }
+            .label-header {
+              font-size: 14px;
+              font-weight: bold;
+              margin-bottom: 8px;
+            }
+            .label-description {
+              font-size: 12px;
+              margin: 8px 0;
+              word-wrap: break-word;
+            }
+            .label-code {
+              font-size: 16px;
+              font-weight: bold;
+              margin: 8px 0;
+              color: #333;
+            }
+            .qr-code {
+              margin: 10px auto;
+              display: block;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="label-container">
+            <div class="label-header">SANEM - ETIQUETA DE ITEM</div>
+            <div class="label-description">${labelData.description}</div>
+            <div class="label-code">Código: ${labelData.tagCode}</div>
+            <img src="data:image/png;base64,${labelData.qrCodeBase64}" alt="QR Code" class="qr-code" style="width: 120px; height: 120px;" />
+          </div>
+        </body>
+      </html>
+    `;
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    setTimeout(() => {
+      printWindow.print();
+    }, 250);
   }
 
   return (
@@ -104,8 +214,6 @@ export default function EstoquePage() {
                 <tr>
                   <th>ID</th>
                   <th>Nome</th>
-                  <th>Categoria</th>
-                  <th>Tamanho</th>
                   <th>Quantidade</th>
                   <th>Ações</th>
                 </tr>
@@ -113,38 +221,47 @@ export default function EstoquePage() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className={styles.loadingMessage}>Carregando...</td>
+                    <td colSpan={4} className={styles.loadingMessage}>Carregando...</td>
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan={6} className={styles.errorMessage}>{error}</td>
+                    <td colSpan={4} className={styles.errorMessage}>{error}</td>
                   </tr>
                 ) : mockEstoque.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className={styles.noDataMessage}>Nenhum produto cadastrado ainda.</td>
+                    <td colSpan={4} className={styles.noDataMessage}>Nenhum produto cadastrado ainda.</td>
                   </tr>
                 ) : (
                   mockEstoque.map(item => (
                     <tr key={item.id}>
                       <td>{item.id}</td>
                       <td>{item.nome}</td>
-                      <td>{item.categoria}</td>
-                      <td>{item.tamanho || '–'}</td>
                       <td>{item.quantidade}</td>
                       <td className={styles.actionButtons}>
                         <button
                           className={styles.editButton}
                           onClick={() => handleEditProduto(item)}
                           disabled={loading}
+                          title="Editar"
                         >
-                          Editar
+                          <FaEdit />
+                        </button>
+                        <button
+                          className={styles.editButton}
+                          onClick={() => handleGenerateLabel(item)}
+                          disabled={loading}
+                          title="Gerar Etiqueta"
+                          style={{ background: '#2196F3', marginLeft: '5px' }}
+                        >
+                          <FaTag />
                         </button>
                         <button
                           className={styles.deleteButton}
                           onClick={() => openDeleteModal(item)}
                           disabled={loading}
+                          title="Excluir"
                         >
-                          Excluir
+                          <FaTrash />
                         </button>
                       </td>
                     </tr>
@@ -158,53 +275,32 @@ export default function EstoquePage() {
 
       {/* Modal Adicionar */}
       {showAddModal && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent}>
-            <h2 className={styles.titulo} style={{ fontSize: '1.3rem', marginBottom: 16 }}>Adicionar Produto</h2>
-            <form className={styles.formulario} onSubmit={handleAddProduto}>
+        <div className={styles.modalOverlay} onClick={() => setShowAddModal(false)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <h2>Adicionar Produto</h2>
+            <form onSubmit={handleAddProduto}>
               <div className={styles.formGroup}>
-                <label htmlFor="nome"><b>Nome*</b></label>
+                <label htmlFor="nome">Nome *</label>
                 <input 
                   id="nome"
-                  className={styles.formInput} 
+                  type="text"
                   required 
                   value={novoProduto.nome} 
                   onChange={e => setNovoProduto({ ...novoProduto, nome: e.target.value })} 
                 />
               </div>
               <div className={styles.formGroup}>
-                <label htmlFor="categoria"><b>Categoria*</b></label>
-                <input 
-                  id="categoria"
-                  className={styles.formInput} 
-                  required 
-                  value={novoProduto.categoria} 
-                  onChange={e => setNovoProduto({ ...novoProduto, categoria: e.target.value })} 
-                />
-              </div>
-              <div className={styles.formGroup}>
-                <label htmlFor="tamanho"><b>Tamanho*</b></label>
-                <input 
-                  id="tamanho"
-                  className={styles.formInput} 
-                  required 
-                  value={novoProduto.tamanho} 
-                  onChange={e => setNovoProduto({ ...novoProduto, tamanho: e.target.value })} 
-                />
-              </div>
-              <div className={styles.formGroup}>
-                <label htmlFor="quantidade"><b>Quantidade*</b></label>
+                <label htmlFor="quantidade">Quantidade *</label>
                 <input 
                   id="quantidade"
-                  className={styles.formInput} 
-                  required 
                   type="number" 
                   min={1} 
+                  required
                   value={novoProduto.quantidade} 
                   onChange={e => setNovoProduto({ ...novoProduto, quantidade: e.target.value })} 
                 />
               </div>
-              <div className={styles.modalButtonGroup}>
+              <div className={styles.modalActions}>
                 <button 
                   type="button" 
                   className={styles.cancelButton} 
@@ -212,7 +308,64 @@ export default function EstoquePage() {
                 >
                   Cancelar
                 </button>
-                <button type="submit" className={styles.submitButton}>Adicionar</button>
+                <button 
+                  type="submit" 
+                  className={styles.submitButton}
+                  disabled={loading}
+                >
+                  {loading ? "Adicionando..." : "Adicionar"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Editar */}
+      {showEditModal && editingItem && (
+        <div className={styles.modalOverlay} onClick={() => setShowEditModal(false)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <h2>Editar Produto</h2>
+            <form onSubmit={handleEditSubmit}>
+              <div className={styles.formGroup}>
+                <label htmlFor="editNome">Nome *</label>
+                <input 
+                  id="editNome"
+                  type="text"
+                  required 
+                  value={editProduto.nome} 
+                  onChange={e => setEditProduto({ ...editProduto, nome: e.target.value })} 
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label htmlFor="editQuantidade">Quantidade *</label>
+                <input 
+                  id="editQuantidade"
+                  type="number" 
+                  min={0} 
+                  required
+                  value={editProduto.quantidade} 
+                  onChange={e => setEditProduto({ ...editProduto, quantidade: e.target.value })} 
+                />
+              </div>
+              <div className={styles.modalActions}>
+                <button 
+                  type="button" 
+                  className={styles.cancelButton} 
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingItem(null);
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit" 
+                  className={styles.submitButton}
+                  disabled={loading}
+                >
+                  {loading ? "Salvando..." : "Salvar Alterações"}
+                </button>
               </div>
             </form>
           </div>

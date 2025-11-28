@@ -14,7 +14,6 @@ export default function Cadastrooption() {
   const handleAvancar = () => {
     if (selected === 'doador') router.push('/cadastrodoador');
     else if (selected === 'beneficiario') router.push('/cadastrobeneficiario');
-    else if (selected === 'voluntario') router.push('/cadastrovoluntario');
   };
 
   return (
@@ -34,10 +33,6 @@ export default function Cadastrooption() {
               <label className={styles.radioLabel}>
                 <input type="radio" className={styles.radioInput} name="tipo" value="beneficiario" checked={selected === 'beneficiario'} onChange={() => setSelected('beneficiario')} />
                 <span className={styles.radioText}><b>Beneficiário</b></span>
-              </label>
-              <label className={styles.radioLabel}>
-                <input type="radio" className={styles.radioInput} name="tipo" value="voluntario" checked={selected === 'voluntario'} onChange={() => setSelected('voluntario')} />
-                <span className={styles.radioText}><b>Voluntário</b></span>
               </label>
             </div>
             <button className={styles.buttonAvancar} onClick={handleAvancar}>Avançar</button>

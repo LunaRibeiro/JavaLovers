@@ -2,6 +2,7 @@ package com.javalovers.core.appuser.controller;
 
 import com.javalovers.common.utils.HttpUtils;
 import com.javalovers.core.appuser.domain.dto.request.AppUserFormDTO;
+import com.javalovers.core.appuser.domain.dto.request.AppUserUpdateDTO;
 import com.javalovers.core.appuser.domain.dto.response.AppUserDTO;
 import com.javalovers.core.appuser.domain.entity.AppUser;
 import com.javalovers.core.appuser.service.AppUserService;
@@ -60,11 +61,11 @@ public class AppUserController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Void> update(@PathVariable Long id, @RequestBody @Valid AppUserFormDTO appUserFormDTO) {
+    public ResponseEntity<Void> update(@PathVariable Long id, @RequestBody @Valid AppUserUpdateDTO appUserUpdateDTO) {
         AppUser user = userService.getOrNull(id);
         if(user == null) return ResponseEntity.notFound().build();
 
-        userService.updateUser(user, appUserFormDTO);
+        userService.updateUser(user, appUserUpdateDTO);
 
         userService.save(user);
 

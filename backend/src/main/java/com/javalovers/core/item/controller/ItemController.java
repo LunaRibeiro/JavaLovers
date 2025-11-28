@@ -4,6 +4,10 @@ import com.javalovers.common.utils.HttpUtils;
 import com.javalovers.core.item.domain.dto.request.ItemFilterDTO;
 import com.javalovers.core.item.domain.dto.request.ItemFormDTO;
 import com.javalovers.core.item.domain.dto.response.ItemDTO;
+import com.javalovers.core.item.domain.dto.response.ItemLabelDTO;
+import com.google.zxing.WriterException;
+
+import java.io.IOException;
 import com.javalovers.core.item.domain.entity.Item;
 import com.javalovers.core.item.service.ItemService;
 import jakarta.validation.Valid;
@@ -52,8 +56,7 @@ public class ItemController {
 
     @PostMapping
     public ResponseEntity<ItemDTO> create(@RequestBody @Valid ItemFormDTO itemFormDTO, UriComponentsBuilder uriComponentsBuilder) {
-        Item item = itemService.generateItem(itemFormDTO);
-        itemService.save(item);
+        Item item = itemService.createAndSave(itemFormDTO);
 
         URI uri = HttpUtils.createURI(uriComponentsBuilder, "item", item.getItemId());
 
@@ -80,5 +83,18 @@ public class ItemController {
         itemService.delete(item);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/label")
+    public ResponseEntity<ItemLabelDTO> getItemLabel(@PathVariable Long id) {
+        Item item = itemService.getOrNull(id);
+        if(item == null) return ResponseEntity.notFound().build();
+
+        try {
+            ItemLabelDTO labelDTO = itemService.generateItemLabel(id);
+            return ResponseEntity.ok(labelDTO);
+        } catch (WriterException | IOException e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 }

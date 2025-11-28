@@ -1,6 +1,5 @@
 package com.javalovers.core.item.domain.entity;
 
-import com.javalovers.core.category.domain.entity.Category;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -32,8 +31,4 @@ public class Item {
 
     @Column(name = "tag_code", unique = true)
     private String tagCode;
-
-    @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "category_id")
-    private Category categoryId;
 }

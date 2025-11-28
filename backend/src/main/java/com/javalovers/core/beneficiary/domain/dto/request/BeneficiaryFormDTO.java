@@ -18,6 +18,8 @@ public record BeneficiaryFormDTO(
         String phone,
         
         String socioeconomicData,
-        BeneficiaryStatus beneficiaryStatus
+        BeneficiaryStatus beneficiaryStatus,
+        
+        Integer withdrawalLimit
 ) {
 }

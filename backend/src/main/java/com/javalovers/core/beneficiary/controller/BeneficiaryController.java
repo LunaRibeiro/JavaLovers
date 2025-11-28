@@ -6,6 +6,9 @@ import com.javalovers.core.beneficiary.domain.dto.request.BeneficiaryFormDTO;
 import com.javalovers.core.beneficiary.domain.dto.response.BeneficiaryDTO;
 import com.javalovers.core.beneficiary.domain.entity.Beneficiary;
 import com.javalovers.core.beneficiary.service.BeneficiaryService;
+import com.javalovers.core.withdrawal.domain.dto.request.WithdrawalFilterDTO;
+import com.javalovers.core.withdrawal.domain.dto.response.WithdrawalDTO;
+import com.javalovers.core.withdrawal.service.WithdrawalService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -23,9 +26,11 @@ import java.util.List;
 public class BeneficiaryController {
 
     private final BeneficiaryService beneficiaryService;
+    private final WithdrawalService withdrawalService;
 
     @GetMapping
-    public ResponseEntity<Page<BeneficiaryDTO>> listPaged(Pageable pageable, BeneficiaryFilterDTO beneficiaryFilterDTO) {
+    public ResponseEntity<Page<BeneficiaryDTO>> listPaged(Pageable pageable,
+            BeneficiaryFilterDTO beneficiaryFilterDTO) {
         Page<Beneficiary> beneficiaryPage = beneficiaryService.list(pageable, beneficiaryFilterDTO);
         Page<BeneficiaryDTO> beneficiaryDTOPage = beneficiaryService.generateBeneficiaryDTOPage(beneficiaryPage);
 
@@ -34,16 +39,15 @@ public class BeneficiaryController {
 
     @GetMapping("/all")
     public ResponseEntity<List<BeneficiaryDTO>> list(BeneficiaryFilterDTO beneficiaryFilterDTO) {
-        List<Beneficiary> beneficiaryList = beneficiaryService.list(beneficiaryFilterDTO);
-        List<BeneficiaryDTO> beneficiaryDTOList = beneficiaryService.generateBeneficiaryDTOList(beneficiaryList);
-
+        List<BeneficiaryDTO> beneficiaryDTOList = beneficiaryService.listAsDTO(beneficiaryFilterDTO);
         return ResponseEntity.ok(beneficiaryDTOList);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<BeneficiaryDTO> get(@PathVariable Long id) {
         Beneficiary beneficiary = beneficiaryService.getOrNull(id);
-        if(beneficiary == null) return ResponseEntity.notFound().build();
+        if (beneficiary == null)
+            return ResponseEntity.notFound().build();
 
         BeneficiaryDTO beneficiaryDTO = beneficiaryService.generateBeneficiaryDTO(beneficiary);
 
@@ -51,7 +55,8 @@ public class BeneficiaryController {
     }
 
     @PostMapping
-    public ResponseEntity<BeneficiaryDTO> create(@RequestBody @Valid BeneficiaryFormDTO beneficiaryFormDTO, UriComponentsBuilder uriComponentsBuilder) {
+    public ResponseEntity<BeneficiaryDTO> create(@RequestBody @Valid BeneficiaryFormDTO beneficiaryFormDTO,
+            UriComponentsBuilder uriComponentsBuilder) {
         Beneficiary beneficiary = beneficiaryService.generateBeneficiary(beneficiaryFormDTO);
         beneficiaryService.save(beneficiary);
 
@@ -61,9 +66,11 @@ public class BeneficiaryController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Void> update(@PathVariable Long id, @RequestBody @Valid BeneficiaryFormDTO beneficiaryFormDTO) {
+    public ResponseEntity<Void> update(@PathVariable Long id,
+            @RequestBody @Valid BeneficiaryFormDTO beneficiaryFormDTO) {
         Beneficiary beneficiary = beneficiaryService.getOrNull(id);
-        if(beneficiary == null) return ResponseEntity.notFound().build();
+        if (beneficiary == null)
+            return ResponseEntity.notFound().build();
 
         beneficiaryService.updateBeneficiary(beneficiary, beneficiaryFormDTO);
 
@@ -75,10 +82,48 @@ public class BeneficiaryController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         Beneficiary beneficiary = beneficiaryService.getOrNull(id);
-        if(beneficiary == null) return ResponseEntity.notFound().build();
+        if (beneficiary == null)
+            return ResponseEntity.notFound().build();
 
         beneficiaryService.delete(beneficiary);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/approve")
+    public ResponseEntity<BeneficiaryDTO> approve(@PathVariable Long id, @RequestParam Long approverUserId) {
+        Beneficiary beneficiary = beneficiaryService.getOrNull(id);
+        if (beneficiary == null)
+            return ResponseEntity.notFound().build();
+
+        beneficiaryService.approveBeneficiary(id, approverUserId);
+
+        Beneficiary updatedBeneficiary = beneficiaryService.getOrThrowException(id);
+        return ResponseEntity.ok(beneficiaryService.generateBeneficiaryDTO(updatedBeneficiary));
+    }
+
+    @PatchMapping("/{id}/reject")
+    public ResponseEntity<BeneficiaryDTO> reject(@PathVariable Long id, @RequestParam Long approverUserId) {
+        Beneficiary beneficiary = beneficiaryService.getOrNull(id);
+        if (beneficiary == null)
+            return ResponseEntity.notFound().build();
+
+        beneficiaryService.rejectBeneficiary(id, approverUserId);
+
+        Beneficiary updatedBeneficiary = beneficiaryService.getOrThrowException(id);
+        return ResponseEntity.ok(beneficiaryService.generateBeneficiaryDTO(updatedBeneficiary));
+    }
+
+    @GetMapping("/{id}/withdrawals")
+    public ResponseEntity<List<WithdrawalDTO>> getWithdrawals(@PathVariable Long id) {
+        Beneficiary beneficiary = beneficiaryService.getOrNull(id);
+        if (beneficiary == null)
+            return ResponseEntity.notFound().build();
+
+        WithdrawalFilterDTO filter = new WithdrawalFilterDTO(null, id, null);
+        List<WithdrawalDTO> withdrawals = withdrawalService.generateWithdrawalDTOList(
+                withdrawalService.list(filter));
+
+        return ResponseEntity.ok(withdrawals);
     }
 }
