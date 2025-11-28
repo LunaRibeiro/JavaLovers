@@ -1,5 +1,6 @@
 // API Service para comunicação com o backend
 import { API_CONFIG } from '../config/api';
+import authService from './authService';
 
 class ApiService {
   constructor() {
@@ -9,9 +10,15 @@ class ApiService {
   // Método genérico para fazer requisições
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
+    
+    // Obter token de autenticação
+    const token = authService.getToken();
+    const authHeader = token ? { Authorization: token } : {};
+    
     const config = {
       headers: {
         'Content-Type': 'application/json',
+        ...authHeader,
         ...options.headers,
       },
       ...options,
@@ -33,6 +40,14 @@ class ApiService {
       return await response.json();
     } catch (error) {
       console.error(`API Error [${endpoint}]:`, error);
+      
+      // Melhorar mensagem de erro para "Failed to fetch"
+      if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
+        const errorMessage = `Não foi possível conectar ao servidor. Verifique se o backend está rodando em ${this.baseURL}`;
+        console.error(errorMessage);
+        throw new Error(errorMessage);
+      }
+      
       throw error;
     }
   }
@@ -232,10 +247,14 @@ class ApiService {
 
   async generateCardForBeneficiary(beneficiaryId) {
     const url = `${this.baseURL}/card/generate/${beneficiaryId}`;
+    const token = authService.getToken();
+    const authHeader = token ? { Authorization: token } : {};
+    
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...authHeader,
       },
     });
 
