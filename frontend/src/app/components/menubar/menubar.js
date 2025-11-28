@@ -8,6 +8,7 @@ import { useNotification } from '../../../components/notifications/NotificationP
 
 export default function MenuBar({ hasNotification }) {
   const [userName, setUserName] = useState('Usuário');
+  const [userId, setUserId] = useState(null);
   const router = useRouter();
   const { showNotification } = useNotification();
 
@@ -16,7 +17,25 @@ export default function MenuBar({ hasNotification }) {
     if (user && user.name) {
       setUserName(user.name);
     }
+    if (user && user.id) {
+      setUserId(user.id);
+    }
   }, []);
+
+  const handleUserClick = () => {
+    if (userId) {
+      // Navegar para a página de usuários com parâmetro para editar o próprio usuário
+      router.push(`/usuarios?editSelf=true`);
+    } else {
+      // Se não tiver ID, tentar buscar
+      const user = authService.getUser();
+      if (user && user.id) {
+        router.push(`/usuarios?editSelf=true`);
+      } else {
+        showNotification("Erro ao carregar dados do usuário", "error");
+      }
+    }
+  };
 
   const handleLogout = () => {
     authService.logout();
@@ -27,7 +46,7 @@ export default function MenuBar({ hasNotification }) {
   return (
     <header className={styles.menuBar}>
       <div className={styles.rightSection}>
-        <div className={styles.userInfo}>
+        <div className={styles.userInfo} onClick={handleUserClick}>
           <UserIcon />
           <span className={styles.userName}>{userName}</span>
           <span className={styles.arrowDown}>▼</span>
