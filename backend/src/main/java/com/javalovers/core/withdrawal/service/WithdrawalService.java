@@ -191,7 +191,9 @@ public class WithdrawalService {
             "FROM item_withdrawn iw " +
             "INNER JOIN withdrawal w ON iw.withdrawal_id = w.withdrawal_id " +
             "WHERE w.beneficiary_id = ? " +
-            "AND w.withdrawal_date >= ?"
+            "AND w.withdrawal_date >= ? " +
+            "AND w.deleted_at IS NULL " +
+            "AND iw.deleted_at IS NULL"
         );
         query.setParameter(1, beneficiaryId);
         query.setParameter(2, startOfMonth);
@@ -209,7 +211,7 @@ public class WithdrawalService {
         }
 
         Query query = entityManager.createNativeQuery(
-            "SELECT COALESCE(SUM(quantity), 0) FROM item_withdrawn WHERE withdrawal_id = ?"
+            "SELECT COALESCE(SUM(quantity), 0) FROM item_withdrawn WHERE withdrawal_id = ? AND deleted_at IS NULL"
         );
         query.setParameter(1, withdrawal.getWithdrawalId());
 
@@ -244,8 +246,20 @@ public class WithdrawalService {
         withdrawalUpdateMapper.update(withdrawal, withdrawalFormDTO, beneficiary, attendantUser);
     }
 
+    @Transactional
     public void delete(Withdrawal withdrawal) {
-        withdrawalRepository.delete(withdrawal);
+        Long withdrawalId = withdrawal.getWithdrawalId();
+        
+        // Soft delete dos registros em item_withdrawn que referenciam este withdrawal
+        Query deleteItemWithdrawnQuery = entityManager.createNativeQuery(
+            "UPDATE item_withdrawn SET deleted_at = NOW() WHERE withdrawal_id = ? AND deleted_at IS NULL"
+        );
+        deleteItemWithdrawnQuery.setParameter(1, withdrawalId);
+        deleteItemWithdrawnQuery.executeUpdate();
+        
+        // Soft delete do withdrawal
+        withdrawal.softDelete();
+        withdrawalRepository.save(withdrawal);
     }
 
     public List<Withdrawal> list(WithdrawalFilterDTO withdrawalFilterDTO) {
@@ -266,10 +280,15 @@ public class WithdrawalService {
         Specification<Withdrawal> beneficiarySpecification = new WithdrawalSpecification(beneficiaryCriteria);
         Specification<Withdrawal> attendantSpecification = new WithdrawalSpecification(attendantUserCriteria);
         Specification<Withdrawal> withdrawalDateSpecification = new WithdrawalSpecification(withdrawalDateCriteria);
+        
+        // Filtro para excluir registros deletados (soft delete)
+        Specification<Withdrawal> notDeletedSpecification = (root, query, criteriaBuilder) -> 
+            criteriaBuilder.isNull(root.get("deletedAt"));
 
         return Specification.where(beneficiarySpecification)
                 .and(attendantSpecification)
-                .and(withdrawalDateSpecification);
+                .and(withdrawalDateSpecification)
+                .and(notDeletedSpecification);
     }
 
     public Page<WithdrawalDTO> generateWithdrawalDTOPage(Page<Withdrawal> withdrawalPage) {

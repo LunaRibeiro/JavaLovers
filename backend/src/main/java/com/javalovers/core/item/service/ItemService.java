@@ -13,6 +13,8 @@ import com.javalovers.core.item.mapper.ItemUpdateMapper;
 import com.javalovers.core.item.repository.ItemRepository;
 import com.javalovers.core.item.specification.ItemSpecification;
 import com.javalovers.core.item.util.QRCodeService;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -34,6 +36,7 @@ public class ItemService {
     private final ItemDTOMapper itemDTOMapper;
     private final ItemUpdateMapper itemUpdateMapper;
     private final QRCodeService qrCodeService;
+    private final EntityManager entityManager;
 
     public Item generateItem(ItemFormDTO itemFormDTO) {
         return itemCreateMapper.convert(itemFormDTO);
@@ -67,8 +70,27 @@ public class ItemService {
         itemUpdateMapper.update(item, itemFormDTO);
     }
 
+    @Transactional
     public void delete(Item item) {
-        itemRepository.delete(item);
+        Long itemId = item.getItemId();
+        
+        // Soft delete dos registros em item_donated que referenciam este item
+        Query deleteItemDonatedQuery = entityManager.createNativeQuery(
+            "UPDATE item_donated SET deleted_at = NOW() WHERE item_id = ? AND deleted_at IS NULL"
+        );
+        deleteItemDonatedQuery.setParameter(1, itemId);
+        deleteItemDonatedQuery.executeUpdate();
+        
+        // Soft delete dos registros em item_withdrawn que referenciam este item
+        Query deleteItemWithdrawnQuery = entityManager.createNativeQuery(
+            "UPDATE item_withdrawn SET deleted_at = NOW() WHERE item_id = ? AND deleted_at IS NULL"
+        );
+        deleteItemWithdrawnQuery.setParameter(1, itemId);
+        deleteItemWithdrawnQuery.executeUpdate();
+        
+        // Soft delete do item
+        item.softDelete();
+        itemRepository.save(item);
     }
 
     public List<Item> list(ItemFilterDTO itemFilterDTO) {

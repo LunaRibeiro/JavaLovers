@@ -1,5 +1,6 @@
 package com.javalovers.core.donation.domain.entity;
 
+import com.javalovers.common.entity.SoftDeletable;
 import com.javalovers.core.donor.domain.entity.Donor;
 import com.javalovers.core.appuser.domain.entity.AppUser;
 import jakarta.persistence.*;
@@ -9,6 +10,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Entity
@@ -16,7 +18,7 @@ import java.util.Date;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class Donation {
+public class Donation implements SoftDeletable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,5 +35,8 @@ public class Donation {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "donor_id")
     private Donor donor;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
 }

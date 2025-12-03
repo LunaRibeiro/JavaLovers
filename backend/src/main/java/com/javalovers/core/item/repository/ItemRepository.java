@@ -7,5 +7,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ItemRepository extends JpaRepository<Item, Long>, JpaSpecificationExecutor<Item> {
-    java.util.Optional<Item> findByTagCode(String tagCode);
+    @org.springframework.data.jpa.repository.Query("SELECT i FROM Item i WHERE i.tagCode = :tagCode AND i.deletedAt IS NULL")
+    java.util.Optional<Item> findByTagCode(@org.springframework.data.repository.query.Param("tagCode") String tagCode);
 }

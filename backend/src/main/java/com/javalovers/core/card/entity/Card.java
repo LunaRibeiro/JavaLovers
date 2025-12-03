@@ -1,5 +1,6 @@
 package com.javalovers.core.card.entity;
 
+import com.javalovers.common.entity.SoftDeletable;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -7,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Entity
@@ -15,7 +17,7 @@ import java.util.Date;
 @NoArgsConstructor
 @Getter
 @Setter
-public class Card {
+public class Card implements SoftDeletable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,5 +35,8 @@ public class Card {
     @Column(name = "issue_date")
     @Temporal(TemporalType.TIMESTAMP)
     private Date issueDate;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
 }

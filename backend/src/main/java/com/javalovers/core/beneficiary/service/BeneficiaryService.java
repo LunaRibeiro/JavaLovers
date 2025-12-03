@@ -61,17 +61,6 @@ public class BeneficiaryService {
         return beneficiaryDTOMapper.convert(beneficiary);
     }
 
-    @Transactional(readOnly = true)
-    public Beneficiary getOrNull(Long id){
-        Beneficiary beneficiary = beneficiaryRepository.findById(id).orElse(null);
-        if (beneficiary != null && beneficiary.getApproverId() != null) {
-            Hibernate.initialize(beneficiary.getApproverId());
-            if (beneficiary.getApproverId().getProfile() != null) {
-                Hibernate.initialize(beneficiary.getApproverId().getProfile());
-            }
-        }
-        return beneficiary;
-    }
 
     public void updateBeneficiary(Beneficiary beneficiary, BeneficiaryFormDTO beneficiaryFormDTO) {
         beneficiaryUpdateMapper.update(beneficiary, beneficiaryFormDTO);
@@ -81,41 +70,45 @@ public class BeneficiaryService {
     public void delete(Beneficiary beneficiary) {
         Long beneficiaryId = beneficiary.getBeneficiaryId();
         
-        // Primeiro, buscar os IDs dos withdrawals associados ao beneficiário
+        // Primeiro, buscar os IDs dos withdrawals associados ao beneficiário (não deletados)
         Query selectWithdrawalIdsQuery = entityManager.createNativeQuery(
-            "SELECT withdrawal_id FROM withdrawal WHERE beneficiary_id = ?"
+            "SELECT withdrawal_id FROM withdrawal WHERE beneficiary_id = ? AND deleted_at IS NULL"
         );
         selectWithdrawalIdsQuery.setParameter(1, beneficiaryId);
         @SuppressWarnings("unchecked")
         List<Object> withdrawalIds = selectWithdrawalIdsQuery.getResultList();
         
-        // Deletar os registros em item_withdrawn que referenciam esses withdrawals
+        // Soft delete dos registros em item_withdrawn que referenciam esses withdrawals
         if (!withdrawalIds.isEmpty()) {
             for (Object withdrawalIdObj : withdrawalIds) {
                 Long withdrawalId = ((Number) withdrawalIdObj).longValue();
                 Query deleteItemWithdrawnQuery = entityManager.createNativeQuery(
-                    "DELETE FROM item_withdrawn WHERE withdrawal_id = ?"
+                    "UPDATE item_withdrawn SET deleted_at = NOW() WHERE withdrawal_id = ? AND deleted_at IS NULL"
                 );
                 deleteItemWithdrawnQuery.setParameter(1, withdrawalId);
                 deleteItemWithdrawnQuery.executeUpdate();
             }
         }
         
-        // Deletar os withdrawals associados ao beneficiário
+        // Soft delete dos withdrawals associados ao beneficiário
         Query deleteWithdrawalQuery = entityManager.createNativeQuery(
-            "DELETE FROM withdrawal WHERE beneficiary_id = ?"
+            "UPDATE withdrawal SET deleted_at = NOW() WHERE beneficiary_id = ? AND deleted_at IS NULL"
         );
         deleteWithdrawalQuery.setParameter(1, beneficiaryId);
         deleteWithdrawalQuery.executeUpdate();
         
-        // Deletar o card associado ao beneficiário (se existir) antes de deletar o beneficiário
+        // Soft delete do card associado ao beneficiário (se existir)
         Optional<Card> cardOptional = cardRepository.findByBeneficiaryId(beneficiaryId);
         
-        if (cardOptional.isPresent()) {
-            cardRepository.delete(cardOptional.get());
+        if (cardOptional.isPresent() && !cardOptional.get().isDeleted()) {
+            Card card = cardOptional.get();
+            card.softDelete();
+            cardRepository.save(card);
         }
         
-        beneficiaryRepository.delete(beneficiary);
+        // Soft delete do beneficiário
+        beneficiary.softDelete();
+        beneficiaryRepository.save(beneficiary);
     }
 
     @Transactional(readOnly = true)
@@ -156,11 +149,16 @@ public class BeneficiaryService {
         Specification<Beneficiary> cpfSpecification = new BeneficiarySpecification(cpfCriteria);
         Specification<Beneficiary> phoneSpecification = new BeneficiarySpecification(phoneCriteria);
         Specification<Beneficiary> socioeconomicDataSpecification = new BeneficiarySpecification(socioeconomicDataCriteria);
+        
+        // Filtro para excluir registros deletados (soft delete)
+        Specification<Beneficiary> notDeletedSpecification = (root, query, criteriaBuilder) -> 
+            criteriaBuilder.isNull(root.get("deletedAt"));
 
         return Specification.where(fullNameSpecification)
                 .and(cpfSpecification)
                 .and(phoneSpecification)
-                .and(socioeconomicDataSpecification);
+                .and(socioeconomicDataSpecification)
+                .and(notDeletedSpecification);
     }
 
     @Transactional(readOnly = true)
@@ -172,6 +170,18 @@ public class BeneficiaryService {
         return beneficiaryList.stream().map(beneficiaryDTOMapper::convert).toList();
     }
 
+    @Transactional(readOnly = true)
+    public Beneficiary getOrNull(Long id) {
+        Beneficiary beneficiary = beneficiaryRepository.findById(id).orElse(null);
+        if (beneficiary != null && beneficiary.getApproverId() != null) {
+            Hibernate.initialize(beneficiary.getApproverId());
+            if (beneficiary.getApproverId().getProfile() != null) {
+                Hibernate.initialize(beneficiary.getApproverId().getProfile());
+            }
+        }
+        return beneficiary;
+    }
+    
     public Beneficiary getOrThrowException(Long id) {
         return beneficiaryRepository.findById(id).orElseThrow(
                 () -> new EntityNotFoundException("beneficiary", id)

@@ -49,8 +49,10 @@ public class DonorService {
         donorUpdateMapper.update(donor, donorFormDTO);
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public void delete(Donor donor) {
-        donorRepository.delete(donor);
+        donor.softDelete();
+        donorRepository.save(donor);
     }
 
     public List<Donor> list(DonorFilterDTO donorFilterDTO) {
@@ -71,10 +73,15 @@ public class DonorService {
         Specification<Donor> nameSpecification = new DonorSpecification(nameCriteria);
         Specification<Donor> cpfCnpjSpecification = new DonorSpecification(cpfCnpjCriteria);
         Specification<Donor> contactSpecification = new DonorSpecification(contactCriteria);
+        
+        // Filtro para excluir registros deletados (soft delete)
+        Specification<Donor> notDeletedSpecification = (root, query, criteriaBuilder) -> 
+            criteriaBuilder.isNull(root.get("deletedAt"));
 
         return Specification.where(nameSpecification)
                 .and(cpfCnpjSpecification)
-                .and(contactSpecification);
+                .and(contactSpecification)
+                .and(notDeletedSpecification);
     }
 
     public Page<DonorDTO> generateDonorDTOPage(Page<Donor> itemPage) {

@@ -48,8 +48,10 @@ public class CategoryService {
         categoryUpdateMapper.update(category, categoryFormDTO);
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public void delete(Category category) {
-        categoryRepository.delete(category);
+        category.softDelete();
+        categoryRepository.save(category);
     }
 
     public List<Category> list(CategoryFilterDTO categoryFilterDTO) {

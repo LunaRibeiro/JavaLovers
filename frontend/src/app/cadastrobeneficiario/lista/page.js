@@ -154,10 +154,12 @@ export default function ListaBeneficiarios() {
       isOpen: true,
       action: async () => {
         try {
-          await removeItem(id);
+          await apiService.deleteBeneficiary(id);
+          await loadDataRaw(); // Recarregar a lista após exclusão
           showNotification("Beneficiário excluído com sucesso!", "success");
         } catch (err) {
-          showNotification("Erro ao excluir beneficiário", "error");
+          console.error("Erro ao excluir beneficiário:", err);
+          showNotification(err.message || "Erro ao excluir beneficiário", "error");
         }
       },
       message: "Tem certeza que deseja excluir este beneficiário?",

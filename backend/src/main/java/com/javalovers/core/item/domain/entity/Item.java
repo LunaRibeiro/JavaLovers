@@ -1,5 +1,6 @@
 package com.javalovers.core.item.domain.entity;
 
+import com.javalovers.common.entity.SoftDeletable;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -8,13 +9,15 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "item")
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class Item {
+public class Item implements SoftDeletable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,4 +34,7 @@ public class Item {
 
     @Column(name = "tag_code", unique = true)
     private String tagCode;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 }

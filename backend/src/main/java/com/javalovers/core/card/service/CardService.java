@@ -51,8 +51,10 @@ public class CardService {
         cardUpdateMapper.update(card, cardFormDTO);
     }
 
+    @Transactional
     public void delete(Card card) {
-        cardRepository.delete(card);
+        card.softDelete();
+        cardRepository.save(card);
     }
 
     public List<Card> list(CardFilterDTO cardFilterDTO) {

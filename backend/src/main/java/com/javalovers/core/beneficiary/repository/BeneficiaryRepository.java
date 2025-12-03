@@ -13,4 +13,7 @@ public interface BeneficiaryRepository extends JpaRepository<Beneficiary, Long>,
     @Modifying
     @Query("UPDATE Beneficiary b SET b.currentWithdrawalsThisMonth = 0")
     int resetCurrentWithdrawalsThisMonth();
+    
+    @Query("SELECT b FROM Beneficiary b WHERE b.beneficiaryId = :id AND b.deletedAt IS NULL")
+    java.util.Optional<Beneficiary> findById(@org.springframework.data.repository.query.Param("id") Long id);
 }

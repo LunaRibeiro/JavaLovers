@@ -1,5 +1,6 @@
 package com.javalovers.core.appuser.domain.entity;
 
+import com.javalovers.common.entity.SoftDeletable;
 import com.javalovers.core.profile.domain.entity.Profile;
 import com.javalovers.core.status.Status;
 import jakarta.persistence.*;
@@ -9,13 +10,15 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "app_user")
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
-public class AppUser {
+public class AppUser implements SoftDeletable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,4 +48,7 @@ public class AppUser {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "profile_id", nullable = false)
     private Profile profile;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 }

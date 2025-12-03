@@ -1,5 +1,6 @@
 package com.javalovers.core.beneficiary.domain.entity;
 
+import com.javalovers.common.entity.SoftDeletable;
 import com.javalovers.core.beneficiarystatus.BeneficiaryStatus;
 import com.javalovers.core.appuser.domain.entity.AppUser;
 import jakarta.persistence.*;
@@ -9,13 +10,15 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "beneficiary")
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class Beneficiary {
+public class Beneficiary implements SoftDeletable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -52,5 +55,8 @@ public class Beneficiary {
 
     @Column(name = "current_withdrawals_this_month")
     private Integer currentWithdrawalsThisMonth;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
 }

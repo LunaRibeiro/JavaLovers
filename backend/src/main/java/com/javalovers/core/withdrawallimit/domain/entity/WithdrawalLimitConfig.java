@@ -1,11 +1,13 @@
 package com.javalovers.core.withdrawallimit.domain.entity;
 
+import com.javalovers.common.entity.SoftDeletable;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Entity
@@ -14,7 +16,7 @@ import java.util.Date;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class WithdrawalLimitConfig {
+public class WithdrawalLimitConfig implements SoftDeletable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,5 +47,8 @@ public class WithdrawalLimitConfig {
     protected void onUpdate() {
         updatedAt = new Date();
     }
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 }
 

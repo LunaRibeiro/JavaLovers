@@ -104,10 +104,12 @@ export default function ListaDoadores() {
       isOpen: true,
       action: async () => {
         try {
-          await removeItem(id);
+          await apiService.deleteDonor(id);
+          await loadDataRaw(); // Recarregar a lista após exclusão
           showNotification("Doador excluído com sucesso!", "success");
         } catch (err) {
-          showNotification("Erro ao excluir doador", "error");
+          console.error("Erro ao excluir doador:", err);
+          showNotification(err.message || "Erro ao excluir doador", "error");
         }
       },
       message: "Tem certeza que deseja excluir este doador?",
