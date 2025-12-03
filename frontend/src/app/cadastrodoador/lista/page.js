@@ -12,6 +12,7 @@ import { useNotification } from "../../../components/notifications/NotificationP
 import ConfirmationModal from "../../../components/confirmation/ConfirmationModal";
 import { validateCPForCNPJ, validateEmail, validatePhone } from "../../../utils/validators";
 import { mapDonorToBackend } from "../../../services/dataMapper";
+import { maskCPForCNPJ, maskPhone, unmask } from "../../../utils/masks";
 
 export default function ListaDoadores() {
   const router = useRouter();
@@ -69,11 +70,19 @@ export default function ListaDoadores() {
     try {
       const donor = await apiService.getDonor(id);
       const mappedDonor = mapDonorFromBackend(donor);
+      // Aplica máscaras nos valores carregados
+      const telefoneMascarado = mappedDonor.telefoneCelular 
+        ? maskPhone(mappedDonor.telefoneCelular) 
+        : "";
+      const cpfMascarado = mappedDonor.cpf 
+        ? maskCPForCNPJ(mappedDonor.cpf) 
+        : "";
+      
       setEditFormData({
         nomeCompleto: mappedDonor.nomeCompleto || "",
-        telefoneCelular: mappedDonor.telefoneCelular || "",
+        telefoneCelular: telefoneMascarado,
         email: mappedDonor.email || "",
-        cpf: mappedDonor.cpf || "",
+        cpf: cpfMascarado,
         endereco: mappedDonor.endereco || "",
         bairro: mappedDonor.bairro || "",
         numero: mappedDonor.numero || "",
@@ -159,11 +168,20 @@ export default function ListaDoadores() {
 
   const handleFieldChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    let processedValue = value;
+    
+    // Aplica máscaras em tempo real
+    if (name === "telefoneCelular") {
+      processedValue = maskPhone(value);
+    } else if (name === "cpf") {
+      processedValue = maskCPForCNPJ(value);
+    }
+    
+    setFormData({ ...formData, [name]: processedValue });
     
     if (name === "email" || name === "telefoneCelular" || name === "cpf") {
-      if (value.length > 0 || fieldErrors[name] !== undefined) {
-        validateField(name, value);
+      if (processedValue.length > 0 || fieldErrors[name] !== undefined) {
+        validateField(name, processedValue);
       }
     }
   };
@@ -201,7 +219,8 @@ export default function ListaDoadores() {
       
       const donorData = mapDonorToBackend({
         ...formData,
-        cpf: cpfCnpjValidation.cleaned
+        cpf: cpfCnpjValidation.cleaned,
+        telefoneCelular: phoneValidation.cleaned
       });
 
       await apiService.createDonor(donorData);
@@ -254,11 +273,20 @@ export default function ListaDoadores() {
 
   const handleEditFieldChange = (e) => {
     const { name, value } = e.target;
-    setEditFormData({ ...editFormData, [name]: value });
+    let processedValue = value;
+    
+    // Aplica máscaras em tempo real
+    if (name === "telefoneCelular") {
+      processedValue = maskPhone(value);
+    } else if (name === "cpf") {
+      processedValue = maskCPForCNPJ(value);
+    }
+    
+    setEditFormData({ ...editFormData, [name]: processedValue });
     
     if (name === "email" || name === "telefoneCelular" || name === "cpf") {
-      if (value.length > 0 || editFieldErrors[name] !== undefined) {
-        validateEditField(name, value);
+      if (processedValue.length > 0 || editFieldErrors[name] !== undefined) {
+        validateEditField(name, processedValue);
       }
     }
   };
@@ -296,7 +324,8 @@ export default function ListaDoadores() {
       
       const donorData = mapDonorToBackend({
         ...editFormData,
-        cpf: cpfCnpjValidation.cleaned
+        cpf: cpfCnpjValidation.cleaned,
+        telefoneCelular: phoneValidation.cleaned
       });
 
       await apiService.updateDonor(editingDonor.id, donorData);
@@ -355,8 +384,8 @@ export default function ListaDoadores() {
                   doadores.map((d) => (
                     <tr key={d.id}>
                       <td>{d.nomeCompleto}</td>
-                      <td>{d.cpf}</td>
-                      <td>{d.telefoneCelular}</td>
+                      <td>{d.cpf ? maskCPForCNPJ(d.cpf) : '-'}</td>
+                      <td>{d.telefoneCelular ? maskPhone(d.telefoneCelular) : '-'}</td>
                       <td>{d.email}</td>
                       <td className={styles.actionButtons}>
                         <button
@@ -418,12 +447,13 @@ export default function ListaDoadores() {
               <div className={styles.formGroup}>
                 <label>Telefone *</label>
                 <input
-                  type="text"
+                  type="tel"
                   name="telefoneCelular"
                   value={formData.telefoneCelular}
                   onChange={handleFieldChange}
                   onBlur={handleFieldBlur}
                   placeholder="(45) 9 9988-7766"
+                  maxLength={15}
                   className={formErrors.telefoneCelular || fieldErrors.telefoneCelular ? styles.inputError : ''}
                 />
                 {(formErrors.telefoneCelular || fieldErrors.telefoneCelular) && <span className={styles.errorText}>{formErrors.telefoneCelular || fieldErrors.telefoneCelular}</span>}
@@ -435,15 +465,10 @@ export default function ListaDoadores() {
                   type="text"
                   name="cpf"
                   value={formData.cpf}
-                  onChange={(e) => {
-                    const onlyNums = e.target.value.replace(/\D/g, "");
-                    setFormData({ ...formData, cpf: onlyNums });
-                    if (fieldErrors.cpf !== undefined || onlyNums.length > 0) {
-                      validateField("cpf", onlyNums);
-                    }
-                  }}
+                  onChange={handleFieldChange}
                   onBlur={handleFieldBlur}
-                  placeholder="11122233355"
+                  placeholder="000.000.000-00 ou 00.000.000/0000-00"
+                  maxLength={18}
                   className={formErrors.cpf || fieldErrors.cpf ? styles.inputError : ''}
                 />
                 {(formErrors.cpf || fieldErrors.cpf) && <span className={styles.errorText}>{formErrors.cpf || fieldErrors.cpf}</span>}
@@ -560,12 +585,13 @@ export default function ListaDoadores() {
               <div className={styles.formGroup}>
                 <label>Telefone *</label>
                 <input
-                  type="text"
+                  type="tel"
                   name="telefoneCelular"
                   value={editFormData.telefoneCelular}
                   onChange={handleEditFieldChange}
                   onBlur={handleEditFieldBlur}
                   placeholder="(45) 9 9988-7766"
+                  maxLength={15}
                   className={editFormErrors.telefoneCelular || editFieldErrors.telefoneCelular ? styles.inputError : ''}
                 />
                 {(editFormErrors.telefoneCelular || editFieldErrors.telefoneCelular) && <span className={styles.errorText}>{editFormErrors.telefoneCelular || editFieldErrors.telefoneCelular}</span>}
@@ -577,15 +603,10 @@ export default function ListaDoadores() {
                   type="text"
                   name="cpf"
                   value={editFormData.cpf}
-                  onChange={(e) => {
-                    const onlyNums = e.target.value.replace(/\D/g, "");
-                    setEditFormData({ ...editFormData, cpf: onlyNums });
-                    if (editFieldErrors.cpf !== undefined || onlyNums.length > 0) {
-                      validateEditField("cpf", onlyNums);
-                    }
-                  }}
+                  onChange={handleEditFieldChange}
                   onBlur={handleEditFieldBlur}
-                  placeholder="11122233355"
+                  placeholder="000.000.000-00 ou 00.000.000/0000-00"
+                  maxLength={18}
                   className={editFormErrors.cpf || editFieldErrors.cpf ? styles.inputError : ''}
                 />
                 {(editFormErrors.cpf || editFieldErrors.cpf) && <span className={styles.errorText}>{editFormErrors.cpf || editFieldErrors.cpf}</span>}

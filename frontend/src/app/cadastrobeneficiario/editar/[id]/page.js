@@ -9,6 +9,8 @@ import { mapBeneficiaryFromBackend } from "../../../../services/dataMapper";
 import { useApi } from "../../../../hooks/useApi";
 import { useNotification } from "../../../../components/notifications/NotificationProvider";
 import { FaIdCard, FaPrint, FaPlus, FaHistory } from "react-icons/fa";
+import { validateCPF, validateEmail, validatePhone } from "../../../../utils/validators";
+import { maskCPF, maskPhone, unmask } from "../../../../utils/masks";
 
 const EditarBeneficiario = () => {
   const router = useRouter();
@@ -22,6 +24,7 @@ const EditarBeneficiario = () => {
   const [loadingCard, setLoadingCard] = useState(false);
   const [withdrawals, setWithdrawals] = useState([]);
   const [loadingWithdrawals, setLoadingWithdrawals] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
   
   const [form, setForm] = useState({
     nomeCompleto: "",
@@ -44,11 +47,19 @@ const EditarBeneficiario = () => {
         setLoadingData(true);
         const beneficiary = await apiService.getBeneficiary(id);
         const mappedBeneficiary = mapBeneficiaryFromBackend(beneficiary);
+        // Aplica máscaras nos valores carregados
+        const telefoneMascarado = mappedBeneficiary.telefoneCelular 
+          ? maskPhone(mappedBeneficiary.telefoneCelular) 
+          : "";
+        const cpfMascarado = mappedBeneficiary.cpfCrnm 
+          ? maskCPF(mappedBeneficiary.cpfCrnm) 
+          : "";
+        
         setForm({
           nomeCompleto: mappedBeneficiary.nomeCompleto || "",
-          telefoneCelular: mappedBeneficiary.telefoneCelular || "",
+          telefoneCelular: telefoneMascarado,
           email: mappedBeneficiary.email || "",
-          cpfCrnm: mappedBeneficiary.cpfCrnm || "",
+          cpfCrnm: cpfMascarado,
           nif: mappedBeneficiary.nif || "",
           endereco: mappedBeneficiary.endereco || "",
           bairro: mappedBeneficiary.bairro || "",
@@ -120,48 +131,101 @@ const EditarBeneficiario = () => {
     }
   };
 
+  const validateField = (name, value) => {
+    let validation = { valid: true, message: "" };
+
+    switch (name) {
+      case "email":
+        validation = validateEmail(value);
+        break;
+      case "telefoneCelular":
+        validation = validatePhone(value);
+        break;
+      case "cpfCrnm":
+        if (value) {
+          validation = validateCPF(value);
+        }
+        break;
+      case "nif":
+        // Validação básica de NIF (apenas números)
+        if (value && !/^\d+$/.test(unmask(value))) {
+          validation = { valid: false, message: "NIF deve conter apenas números" };
+        }
+        break;
+      default:
+        validation = { valid: true };
+    }
+
+    setFieldErrors(prev => ({
+      ...prev,
+      [name]: validation.valid ? "" : validation.message
+    }));
+
+    return validation.valid;
+  };
+
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    let processedValue = value;
+    
+    // Aplica máscaras em tempo real
+    if (name === "telefoneCelular") {
+      processedValue = maskPhone(value);
+    } else if (name === "cpfCrnm") {
+      processedValue = maskCPF(value);
+    }
+    
+    setForm({ ...form, [name]: processedValue });
+    
+    // Validação em tempo real
+    if (name === "email" || name === "telefoneCelular" || name === "cpfCrnm" || name === "nif") {
+      if (processedValue.length > 0 || fieldErrors[name] !== undefined) {
+        validateField(name, processedValue);
+      }
+    }
+  };
+
+  const handleBlur = (e) => {
+    validateField(e.target.name, e.target.value);
   };
 
   async function handleSubmit(e) {
     e.preventDefault();
     clearError();
     
+    // Valida todos os campos antes de submeter
+    const emailValid = validateField("email", form.email);
+    const phoneValid = validateField("telefoneCelular", form.telefoneCelular);
+    
+    const cpfCrnmLimpo = unmask(form.cpfCrnm);
+    const nifLimpo = unmask(form.nif);
+    
+    let cpfValid = true;
+    if (cpfCrnmLimpo.length > 0) {
+      cpfValid = validateField("cpfCrnm", form.cpfCrnm);
+    }
+    
     // Validação: pelo menos um dos campos (CPF/CRNM ou NIF) deve ser preenchido
-    const cpfCrnmLimpo = form.cpfCrnm.replace(/\D/g, "");
-    const nifLimpo = form.nif.replace(/\D/g, "");
-    
     if (cpfCrnmLimpo.length === 0 && nifLimpo.length === 0) {
-      setError("É obrigatório preencher pelo menos um dos campos: CPF/CRNM ou NIF.");
-      return;
-    }
-    
-    // Se CPF/CRNM foi preenchido, validar formato (11 dígitos para CPF)
-    if (cpfCrnmLimpo.length > 0 && cpfCrnmLimpo.length !== 11) {
-      setError("CPF/CRNM deve conter 11 dígitos numéricos.");
+      showNotification("É obrigatório preencher pelo menos um dos campos: CPF/CRNM ou NIF.", "error");
       return;
     }
 
-    // Validação de telefone
-    const telefoneLimpo = form.telefoneCelular.replace(/\D/g, "");
-    if (telefoneLimpo.length < 10 || telefoneLimpo.length > 11) {
-      setError("Telefone deve conter entre 10 e 11 dígitos (incluindo DDD).");
-      return;
-    }
-
-    // Validação de email (regex simples)
-    if (!/\S+@\S+\.\S+/.test(form.email)) {
-      setError("Por favor, insira um e-mail válido.");
+    // Verifica se há erros de validação
+    if (!emailValid || !phoneValid || !cpfValid) {
+      showNotification("Por favor, corrija os erros nos campos antes de enviar.", "error");
       return;
     }
 
     try {
       // Preparar dados para o backend
+      const phoneValidation = validatePhone(form.telefoneCelular);
+      const phoneCleaned = phoneValidation.cleaned;
+      
       const beneficiaryData = {
         fullName: form.nomeCompleto,
         cpf: cpfCrnmLimpo || nifLimpo,
-        phone: telefoneLimpo,
+        phone: phoneCleaned,
         socioeconomicData: JSON.stringify({
           endereco: form.endereco,
           bairro: form.bairro,
@@ -281,10 +345,13 @@ const EditarBeneficiario = () => {
                 name="email" 
                 type="email"
                 value={form.email} 
-                onChange={handleChange} 
+                onChange={handleChange}
+                onBlur={handleBlur}
                 required 
-                placeholder="fulano@gmail.com" 
+                placeholder="fulano@gmail.com"
+                className={fieldErrors.email ? styles.inputError : ""}
               />
+              {fieldErrors.email && <span className={styles.fieldError}>{fieldErrors.email}</span>}
             </div>
 
             {/* Linha Telefone, CPF/CRNM, NIF */}
@@ -294,11 +361,15 @@ const EditarBeneficiario = () => {
                 id="telefoneCelular"
                 name="telefoneCelular" 
                 value={form.telefoneCelular} 
-                onChange={handleChange} 
+                onChange={handleChange}
+                onBlur={handleBlur}
                 required 
                 placeholder="(45) 9 9988-7766" 
-                type="tel" 
+                type="tel"
+                maxLength={15}
+                className={fieldErrors.telefoneCelular ? styles.inputError : ""}
               />
+              {fieldErrors.telefoneCelular && <span className={styles.fieldError}>{fieldErrors.telefoneCelular}</span>}
             </div>
             <div className={styles.formGroup}>
               <label htmlFor="cpfCrnm"><b>CPF/CRNM (opcional se NIF for preenchido)</b></label>
@@ -306,15 +377,14 @@ const EditarBeneficiario = () => {
                 id="cpfCrnm"
                 name="cpfCrnm" 
                 type="text" 
-                pattern="[0-9]*"
-                maxLength={11} 
                 value={form.cpfCrnm} 
-                onChange={e => { 
-                  const onlyNums = e.target.value.replace(/\D/g, ""); 
-                  setForm({ ...form, cpfCrnm: onlyNums }); 
-                }} 
-                placeholder="11122233355" 
+                onChange={handleChange}
+                onBlur={handleBlur}
+                placeholder="000.000.000-00"
+                maxLength={14}
+                className={fieldErrors.cpfCrnm ? styles.inputError : ""}
               />
+              {fieldErrors.cpfCrnm && <span className={styles.fieldError}>{fieldErrors.cpfCrnm}</span>}
             </div>
             <div className={styles.formGroup}>
               <label htmlFor="nif"><b>NIF (opcional se CPF/CRNM for preenchido)</b></label>
@@ -322,14 +392,13 @@ const EditarBeneficiario = () => {
                 id="nif"
                 name="nif" 
                 type="text" 
-                pattern="[0-9]*"
                 value={form.nif} 
-                onChange={e => { 
-                  const onlyNums = e.target.value.replace(/\D/g, ""); 
-                  setForm({ ...form, nif: onlyNums }); 
-                }} 
-                placeholder="123456789" 
+                onChange={handleChange}
+                onBlur={handleBlur}
+                placeholder="123456789"
+                className={fieldErrors.nif ? styles.inputError : ""}
               />
+              {fieldErrors.nif && <span className={styles.fieldError}>{fieldErrors.nif}</span>}
             </div>
 
             <hr className={styles.separador} />

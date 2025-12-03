@@ -9,6 +9,7 @@ import { mapDonorToBackend } from "../../services/dataMapper";
 import { useApi } from "../../hooks/useApi";
 import { useNotification } from "../../components/notifications/NotificationProvider";
 import { validateCPForCNPJ, validateEmail, validatePhone } from "../../utils/validators";
+import { maskCPForCNPJ, maskPhone, unmask } from "../../utils/masks";
 
 const CadastroDoador = () => {
   const [form, setForm] = useState({
@@ -56,15 +57,24 @@ const CadastroDoador = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
+    let processedValue = value;
+    
+    // Aplica máscaras em tempo real
+    if (name === "telefoneCelular") {
+      processedValue = maskPhone(value);
+    } else if (name === "cpf") {
+      processedValue = maskCPForCNPJ(value);
+    }
+    
+    setForm({ ...form, [name]: processedValue });
     
     // Validação em tempo real para campos críticos (email, telefone, CPF) assim que começam a digitar
     if (name === "email" || name === "telefoneCelular" || name === "cpf") {
-      if (value.length > 0 || fieldErrors[name] !== undefined) {
-        validateField(name, value);
+      if (processedValue.length > 0 || fieldErrors[name] !== undefined) {
+        validateField(name, processedValue);
       }
-    } else if (fieldErrors[name] !== undefined || value.length > 0) {
-      validateField(name, value);
+    } else if (fieldErrors[name] !== undefined || processedValue.length > 0) {
+      validateField(name, processedValue);
     }
   };
 
@@ -82,21 +92,22 @@ const CadastroDoador = () => {
     const phoneValid = validateField("telefoneCelular", form.telefoneCelular);
     const cpfValid = validateField("cpf", form.cpf);
 
-    // Verifica se há erros de validação
-    if (!emailValid || !phoneValid || !cpfValid) {
-      setError("Por favor, corrija os erros nos campos antes de enviar.");
-      return;
-    }
-
     // Obter dados validados para envio
     const cpfCnpjValidation = validateCPForCNPJ(form.cpf);
     const phoneValidation = validatePhone(form.telefoneCelular);
+
+    // Verifica se há erros de validação
+    if (!emailValid || !phoneValid || !cpfValid) {
+      showNotification("Por favor, corrija os erros nos campos antes de enviar.", "error");
+      return;
+    }
 
     try {
       // Prepara dados para o backend
       const donorData = mapDonorToBackend({
         ...form,
-        cpf: cpfCnpjValidation.cleaned
+        cpf: cpfCnpjValidation.cleaned,
+        telefoneCelular: phoneValidation.cleaned
       });
 
       // Chama a API
@@ -142,12 +153,34 @@ const CadastroDoador = () => {
             </div>
             <div className={styles.formGroup}>
               <label htmlFor="telefoneCelular"><b>Telefone*</b></label>
-              <input id="telefoneCelular" name="telefoneCelular" value={form.telefoneCelular} onChange={handleChange} onBlur={handleBlur} required placeholder="(45) 9 9988-7766" className={fieldErrors.telefoneCelular ? styles.inputError : ""} />
+              <input 
+                id="telefoneCelular" 
+                name="telefoneCelular" 
+                value={form.telefoneCelular} 
+                onChange={handleChange} 
+                onBlur={handleBlur} 
+                required 
+                placeholder="(45) 9 9988-7766"
+                type="tel"
+                maxLength={15}
+                className={fieldErrors.telefoneCelular ? styles.inputError : ""} 
+              />
               {fieldErrors.telefoneCelular && <span className={styles.fieldError}>{fieldErrors.telefoneCelular}</span>}
             </div>
             <div className={styles.formGroup}>
-              <label htmlFor="cpf"><b>CPF*</b></label>
-              <input id="cpf" name="cpf" type="text" pattern="[0-9]*" maxLength={14} value={form.cpf} onChange={e => { const onlyNums = e.target.value.replace(/\D/g, ""); setForm({ ...form, cpf: onlyNums }); if (fieldErrors.cpf !== undefined || onlyNums.length > 0) { validateField("cpf", onlyNums); } }} onBlur={handleBlur} placeholder="11122233355" required className={fieldErrors.cpf ? styles.inputError : ""} />
+              <label htmlFor="cpf"><b>CPF/CNPJ*</b></label>
+              <input 
+                id="cpf" 
+                name="cpf" 
+                type="text" 
+                value={form.cpf} 
+                onChange={handleChange}
+                onBlur={handleBlur} 
+                placeholder="000.000.000-00 ou 00.000.000/0000-00"
+                maxLength={18}
+                required 
+                className={fieldErrors.cpf ? styles.inputError : ""} 
+              />
               {fieldErrors.cpf && <span className={styles.fieldError}>{fieldErrors.cpf}</span>}
             </div>
             <hr className={styles.separador} />

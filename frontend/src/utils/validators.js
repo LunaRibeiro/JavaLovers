@@ -143,6 +143,12 @@ export const validatePhone = (phone) => {
     return { valid: false, message: "Telefone deve conter 10 ou 11 dígitos (incluindo DDD)" };
   }
 
+  // Validação adicional: DDD deve estar entre 11 e 99
+  const ddd = cleaned.slice(0, 2);
+  if (parseInt(ddd) < 11 || parseInt(ddd) > 99) {
+    return { valid: false, message: "DDD inválido" };
+  }
+
   return { valid: true, cleaned };
 };
 

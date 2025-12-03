@@ -8,6 +8,8 @@ import apiService from "../../../../services/api";
 import { mapDonorFromBackend, mapDonorToBackend } from "../../../../services/dataMapper";
 import { useApi } from "../../../../hooks/useApi";
 import { useNotification } from "../../../../components/notifications/NotificationProvider";
+import { validateCPForCNPJ, validateEmail, validatePhone } from "../../../../utils/validators";
+import { maskCPForCNPJ, maskPhone, unmask } from "../../../../utils/masks";
 
 const EditarDoador = () => {
   const router = useRouter();
@@ -17,6 +19,7 @@ const EditarDoador = () => {
   const { showNotification } = useNotification();
   const [loadingData, setLoadingData] = useState(true);
   const [validationError, setValidationError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
   
   const [form, setForm] = useState({
     nomeCompleto: "",
@@ -36,11 +39,19 @@ const EditarDoador = () => {
         setLoadingData(true);
         const donor = await apiService.getDonor(id);
         const mappedDonor = mapDonorFromBackend(donor);
+        // Aplica máscaras nos valores carregados
+        const telefoneMascarado = mappedDonor.telefoneCelular 
+          ? maskPhone(mappedDonor.telefoneCelular) 
+          : "";
+        const cpfMascarado = mappedDonor.cpf 
+          ? maskCPForCNPJ(mappedDonor.cpf) 
+          : "";
+        
         setForm({
           nomeCompleto: mappedDonor.nomeCompleto || "",
-          telefoneCelular: mappedDonor.telefoneCelular || "",
+          telefoneCelular: telefoneMascarado,
           email: mappedDonor.email || "",
-          cpf: mappedDonor.cpf || "",
+          cpf: cpfMascarado,
           endereco: mappedDonor.endereco || "",
           bairro: mappedDonor.bairro || "",
           numero: mappedDonor.numero || "",
@@ -61,8 +72,56 @@ const EditarDoador = () => {
     }
   }, [id, router]);
 
+  const validateField = (name, value) => {
+    let validation = { valid: true, message: "" };
+
+    switch (name) {
+      case "email":
+        validation = validateEmail(value);
+        break;
+      case "telefoneCelular":
+        validation = validatePhone(value);
+        break;
+      case "cpf":
+        if (value) {
+          validation = validateCPForCNPJ(value);
+        }
+        break;
+      default:
+        validation = { valid: true };
+    }
+
+    setFieldErrors(prev => ({
+      ...prev,
+      [name]: validation.valid ? "" : validation.message
+    }));
+
+    return validation.valid;
+  };
+
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    let processedValue = value;
+    
+    // Aplica máscaras em tempo real
+    if (name === "telefoneCelular") {
+      processedValue = maskPhone(value);
+    } else if (name === "cpf") {
+      processedValue = maskCPForCNPJ(value);
+    }
+    
+    setForm({ ...form, [name]: processedValue });
+    
+    // Validação em tempo real
+    if (name === "email" || name === "telefoneCelular" || name === "cpf") {
+      if (processedValue.length > 0 || fieldErrors[name] !== undefined) {
+        validateField(name, processedValue);
+      }
+    }
+  };
+
+  const handleBlur = (e) => {
+    validateField(e.target.name, e.target.value);
   };
 
   async function handleSubmit(e) {
@@ -70,19 +129,29 @@ const EditarDoador = () => {
     clearError();
     setValidationError("");
     
-    // Limpa o CPF para garantir que só vai número
-    const cpfLimpo = form.cpf.replace(/\D/g, "");
+    // Valida todos os campos antes de submeter
+    const emailValid = validateField("email", form.email);
+    const phoneValid = validateField("telefoneCelular", form.telefoneCelular);
+    const cpfValid = validateField("cpf", form.cpf);
     
-    if (cpfLimpo.length > 0 && cpfLimpo.length !== 11) {
-      setValidationError("CPF deve conter 11 dígitos numéricos.");
+    // Limpa o CPF para garantir que só vai número
+    const cpfLimpo = unmask(form.cpf);
+    
+    // Verifica se há erros de validação
+    if (!emailValid || !phoneValid || !cpfValid) {
+      showNotification("Por favor, corrija os erros nos campos antes de enviar.", "error");
       return;
     }
 
     try {
       // Prepara dados para o backend
+      const phoneValidation = validatePhone(form.telefoneCelular);
+      const cpfCnpjValidation = validateCPForCNPJ(form.cpf);
+      
       const donorData = mapDonorToBackend({
         ...form,
-        cpf: cpfLimpo
+        cpf: cpfCnpjValidation.cleaned,
+        telefoneCelular: phoneValidation.cleaned
       });
 
       // Chama a API de atualização
@@ -136,10 +205,13 @@ const EditarDoador = () => {
                 name="email" 
                 type="email" 
                 value={form.email} 
-                onChange={handleChange} 
+                onChange={handleChange}
+                onBlur={handleBlur}
                 required 
-                placeholder="fulano@gmail.com" 
+                placeholder="fulano@gmail.com"
+                className={fieldErrors.email ? styles.inputError : ""}
               />
+              {fieldErrors.email && <span className={styles.fieldError}>{fieldErrors.email}</span>}
             </div>
             <div className={styles.formGroup}>
               <label htmlFor="telefoneCelular"><b>Telefone*</b></label>
@@ -147,28 +219,31 @@ const EditarDoador = () => {
                 id="telefoneCelular" 
                 name="telefoneCelular" 
                 value={form.telefoneCelular} 
-                onChange={handleChange} 
+                onChange={handleChange}
+                onBlur={handleBlur}
                 required 
                 placeholder="(45) 9 9988-7766" 
-                type="tel" 
+                type="tel"
+                maxLength={15}
+                className={fieldErrors.telefoneCelular ? styles.inputError : ""}
               />
+              {fieldErrors.telefoneCelular && <span className={styles.fieldError}>{fieldErrors.telefoneCelular}</span>}
             </div>
             <div className={styles.formGroup}>
-              <label htmlFor="cpf"><b>CPF*</b></label>
+              <label htmlFor="cpf"><b>CPF/CNPJ*</b></label>
               <input 
                 id="cpf" 
                 name="cpf" 
                 type="text" 
-                pattern="[0-9]*" 
-                maxLength={11} 
                 value={form.cpf} 
-                onChange={e => { 
-                  const onlyNums = e.target.value.replace(/\D/g, ""); 
-                  setForm({ ...form, cpf: onlyNums }); 
-                }} 
-                placeholder="11122233355" 
-                required 
+                onChange={handleChange}
+                onBlur={handleBlur}
+                placeholder="000.000.000-00 ou 00.000.000/0000-00"
+                maxLength={18}
+                required
+                className={fieldErrors.cpf ? styles.inputError : ""}
               />
+              {fieldErrors.cpf && <span className={styles.fieldError}>{fieldErrors.cpf}</span>}
             </div>
             <hr className={styles.separador} />
             <div className={styles.formGroupFullWidth}>
